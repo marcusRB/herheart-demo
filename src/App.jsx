@@ -1223,7 +1223,7 @@ const TeamPage = () => (
   <div style={{ paddingTop:58 }}>
     <div style={{ background:T.navBg, padding:"52px clamp(20px,5vw,72px)" }}>
       <div style={{ maxWidth:1120, margin:"0 auto" }}>
-        <LabelTag>The team</LabelTag>
+        <LabelTag>The team - NextBeat</LabelTag>
         <h1 className="section-title" style={{ color:"#fff", marginBottom:16 }}>
           Clinical depth meets<br /><em>engineering precision</em>
         </h1>
@@ -1349,7 +1349,7 @@ const ContactPage = () => {
           </div>
         )}
         <div className="grid-3" style={{ marginTop:32 }}>
-          {[["Email","hello@herheart.ai"],["Based in","Madrid, Spain · EU"],["Response time","Within 48 h"]].map(([k,v]) => (
+          {[["Email","hello@herheart.ai"],["Based in","London, England · UK"],["Response time","Within 48 h"]].map(([k,v]) => (
             <div key={k} style={{ textAlign:"center", padding:16,
               borderRight: k !== "Response time" ? `1px solid ${T.border}` : "none" }}>
               <div style={{ fontSize:10, fontWeight:600, color:T.textMuted,

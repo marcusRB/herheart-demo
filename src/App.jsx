@@ -56,11 +56,14 @@ const GLOBAL_CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html { scroll-behavior: smooth; }
+  html, body, #root { width: 100%; min-height: 100%; }
   body { background: ${T.bg}; color: ${T.text}; font-family: 'Inter', sans-serif;
-    font-size: 15px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+    font-size: 15px; line-height: 1.65; -webkit-font-smoothing: antialiased;
+    min-width: 320px; overflow-x: hidden; }
   a { color: inherit; text-decoration: none; }
   button { cursor: pointer; font-family: inherit; }
   input, textarea, select { font-family: inherit; }
+  img, svg, video, canvas { max-width: 100%; height: auto; }
 
   @keyframes marquee { from { transform:translateX(0) } to { transform:translateX(-50%) } }
   @keyframes fadeUp  { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:translateY(0) } }
@@ -118,13 +121,57 @@ const GLOBAL_CSS = `
     background:${T.surface}; border:1px solid ${T.border};
     border-radius:12px; padding:28px;
     transition: border-color .2s, box-shadow .2s;
+    overflow-wrap:anywhere;
   }
   .card:hover { border-color:${T.border2}; box-shadow:0 4px 20px rgba(13,31,60,.06); }
   .card-sm { padding:20px; border-radius:10px; }
 
+  .app-shell { width:100%; min-height:100vh; overflow-x:hidden; }
+
+  .nav-inner {
+    max-width:1120px; margin:0 auto; padding:0 clamp(16px,3vw,48px);
+    height:58px; display:grid; grid-template-columns:auto minmax(0,1fr);
+    align-items:center; gap:16px;
+  }
+  .nav-links { min-width:0; display:flex; justify-content:flex-end; }
+  .nav-scroll {
+    min-width:0; display:flex; gap:2px; align-items:center; overflow-x:auto;
+    white-space:nowrap; scrollbar-width:none; -ms-overflow-style:none;
+  }
+  .nav-scroll::-webkit-scrollbar { display:none; }
+  .nav-link-btn, .nav-cta { flex:0 0 auto; }
+  .nav-divider { width:1px; height:16px; background:rgba(255,255,255,.15); margin:0 8px; flex:0 0 auto; }
+
+  .layout-two {
+    display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:clamp(28px,4vw,56px); align-items:center;
+  }
+  .layout-two-start { align-items:start; }
+
+  .compact-grid { display:grid; }
+  .compact-grid-2 { grid-template-columns:repeat(2, minmax(0,1fr)); gap:16px; }
+  .compact-grid-3 { grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; }
+  .result-meta-grid { grid-template-columns:repeat(2, minmax(0,1fr)); gap:6px; }
+
   .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
   .grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
-  @media(max-width:820px) { .grid-3,.grid-2 { grid-template-columns:1fr; } }
+  @media(max-width:920px) {
+    .layout-two,
+    .compact-grid-2,
+    .compact-grid-3,
+    .grid-3,
+    .grid-2 { grid-template-columns:1fr; }
+  }
+  @media(max-width:700px) {
+    .nav-inner { gap:12px; padding:0 14px; }
+    .nav-link-btn { font-size:11px !important; padding:5px 9px !important; }
+    .nav-cta { padding:7px 14px !important; }
+  }
+  @media(max-width:520px) {
+    .nav-inner { grid-template-columns:minmax(0,1fr); height:auto; padding-top:10px; padding-bottom:10px; }
+    .nav-links { width:100%; }
+    .result-meta-grid { grid-template-columns:1fr; }
+  }
 
   .divider { height:1px; background:${T.border}; }
 
@@ -219,8 +266,7 @@ const Nav = ({ page, setPage }) => {
       borderBottom:`1px solid ${T.ehrBorder}`,
       boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,.18)" : "none",
       transition:"box-shadow .3s" }}>
-      <div style={{ maxWidth:1120, margin:"0 auto", padding:"0 clamp(16px,3vw,48px)",
-        height:58, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+      <div className="nav-inner">
         <button onClick={() => setPage("Home")} style={{ background:"none", border:"none",
           fontFamily:"'Lora',serif", fontSize:19, color:"#fff",
           display:"flex", alignItems:"center", gap:3, letterSpacing:"-.01em" }}>
@@ -228,9 +274,11 @@ const Nav = ({ page, setPage }) => {
           <span style={{ fontSize:9, color:"rgba(255,255,255,.45)", fontFamily:"'Inter',sans-serif",
             fontWeight:600, marginLeft:7, letterSpacing:".12em", textTransform:"uppercase" }}>AI</span>
         </button>
-        <div style={{ display:"flex", gap:2, alignItems:"center" }}>
+        <div className="nav-links">
+          <div className="nav-scroll">
           {PAGES.slice(0,-1).map(p => (
             <button key={p} onClick={() => setPage(p)}
+              className="nav-link-btn"
               style={{ background: p==="Demo" ? (page==="Demo" ? T.teal : `${T.teal}33`) : "none",
                 border: p==="Demo" ? `1px solid ${p===page ? T.teal : T.tealLight}` : "none",
                 fontSize:12, fontWeight: p===page ? 600 : 400,
@@ -240,11 +288,12 @@ const Nav = ({ page, setPage }) => {
               {p === "Demo" ? "▶ Live Demo" : p}
             </button>
           ))}
-          <div style={{ width:1, height:16, background:"rgba(255,255,255,.15)", margin:"0 8px" }} />
-          <button className="btn-primary" style={{ padding:"7px 18px", fontSize:12 }}
+          <div className="nav-divider" />
+          <button className="btn-primary nav-cta" style={{ padding:"7px 18px", fontSize:12 }}
             onClick={() => setPage("Contact")}>
             Request pilot →
           </button>
+          </div>
         </div>
       </div>
     </nav>
@@ -306,7 +355,7 @@ const HomePage = ({ setPage }) => (
 
     {/* B2B value proposition */}
     <Section>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:56, alignItems:"center" }}>
+      <div className="layout-two">
         <div>
           <LabelTag>For hospitals &amp; health systems</LabelTag>
           <h2 className="section-title" style={{ marginBottom:16 }}>
@@ -643,7 +692,7 @@ const DemoPage = ({ setPage }) => {
                 letterSpacing:".08em", color:T.teal, marginBottom:10 }}>
                 Vital signs &amp; presentation
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:10 }}>
+              <div className="compact-grid compact-grid-3" style={{ marginBottom:10 }}>
                 <FG label="Systolic BP (mmHg)">
                   <input className="ehr-input" type="number" value={fields.sbp}
                     onChange={e=>setField("sbp",+e.target.value)} min={60} max={250} />
@@ -657,7 +706,7 @@ const DemoPage = ({ setPage }) => {
                     onChange={e=>setField("spo2",+e.target.value)} min={70} max={100} />
                 </FG>
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              <div className="compact-grid compact-grid-2" style={{ gap:10 }}>
                 <FG label="Chest pain onset">
                   <select className="ehr-select" value={fields.onset}
                     onChange={e=>setField("onset",e.target.value)}>
@@ -679,7 +728,7 @@ const DemoPage = ({ setPage }) => {
                 letterSpacing:".08em", color:T.teal, marginBottom:10 }}>
                 Laboratory results
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+              <div className="compact-grid compact-grid-3">
                 <FG label="Troponin I (ng/L)">
                   <input className="ehr-input" type="number" value={fields.trop}
                     onChange={e=>setField("trop",+e.target.value)} min={0} max={5000} />
@@ -714,7 +763,7 @@ const DemoPage = ({ setPage }) => {
                   </button>
                 ))}
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              <div className="compact-grid compact-grid-2" style={{ gap:10 }}>
                 <FG label="Age at menopause">
                   <input className="ehr-input" type="number" value={fields.meno}
                     onChange={e=>setField("meno",+e.target.value)} min={35} max={65} />
@@ -809,7 +858,7 @@ const DemoPage = ({ setPage }) => {
                 </div>
 
                 {/* Meta */}
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6 }}>
+                <div className="compact-grid result-meta-grid">
                   {[["Model","XGBoost v2.4.1"],["Latency",`${logTime} ms`],["Features","41 inputs"],["Drift","Nominal"]].map(([k,v]) => (
                     <div key={k} style={{ background:T.surfaceAlt, borderRadius:7,
                       padding:"8px 10px", border:`1px solid ${T.border}` }}>
@@ -949,7 +998,7 @@ const SolutionPage = () => (
           POST /v1/score → {"{ risk_tier: 'high', confidence: 0.91, shap: [{feature:'preeclampsia_hx', value:0.34}] }"}
         </div>
       </div>
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:48, alignItems:"start" }}>
+      <div className="layout-two layout-two-start" style={{ gap:48 }}>
         <div>
           <h2 className="section-title" style={{ fontSize:28, marginBottom:28 }}>How it works in the ED</h2>
           {[
@@ -1299,7 +1348,7 @@ const ContactPage = () => {
         ) : (
           <div className="card">
             <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+              <div className="compact-grid compact-grid-2">
                 {[["Name","Full name"],["Organisation","Hospital / Health system / Fund"]].map(([l,ph]) => (
                   <div key={l}>
                     <div style={{ fontSize:11, fontWeight:600, color:T.textMuted,
@@ -1441,7 +1490,7 @@ export default function App() {
   };
 
   return (
-    <div style={{ background:T.bg, minHeight:"100vh" }}>
+    <div className="app-shell" style={{ background:T.bg, minHeight:"100vh" }}>
       <Nav page={page} setPage={setPage} />
       <main>{renderPage()}</main>
       <Footer setPage={setPage} />

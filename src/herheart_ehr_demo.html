@@ -1,0 +1,463 @@
+
+<h2 class="sr-only">HerHeart AI — interactive clinical triage demo showing patient risk scoring inside a mock EHR interface</h2>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.demo{font-family:var(--font-sans);font-size:14px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary)}
+
+.ehr-bar{background:#1a2744;color:#c8d4f0;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.ehr-bar .logo{font-weight:500;font-size:13px;color:#e8eeff;letter-spacing:.02em}
+.ehr-bar .tabs{display:flex;gap:0}
+.ehr-tab{padding:5px 14px;font-size:11px;color:#8a9bbf;cursor:pointer;border-bottom:2px solid transparent}
+.ehr-tab.on{color:#e8eeff;border-bottom:2px solid #5b8dee}
+.ehr-bar .utils{display:flex;align-items:center;gap:12px;font-size:11px;color:#8a9bbf}
+
+.pt-banner{background:#1e2d1e;border-bottom:0.5px solid var(--color-border-tertiary);padding:8px 16px;display:flex;align-items:center;gap:20px}
+.pt-name{font-size:14px;font-weight:500;color:#a8e6b0}
+.pt-meta{font-size:11px;color:#6a9a72}
+.pt-alert{margin-left:auto;background:#3a1a1a;color:#f09090;font-size:11px;padding:3px 10px;border-radius:4px;border:0.5px solid #6a2a2a}
+
+.main{display:grid;grid-template-columns:1fr 320px;min-height:520px}
+
+.form-col{padding:16px;border-right:0.5px solid var(--color-border-tertiary)}
+.form-section{margin-bottom:16px}
+.form-section-title{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.form-row.tri{grid-template-columns:1fr 1fr 1fr}
+.form-group{display:flex;flex-direction:column;gap:3px}
+.form-group label{font-size:11px;color:var(--color-text-secondary)}
+.form-group input,.form-group select{font-size:12px;padding:5px 8px;border-radius:5px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);height:28px}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--color-border-info)}
+.toggle-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.toggle{padding:4px 10px;border-radius:4px;border:0.5px solid var(--color-border-secondary);font-size:11px;color:var(--color-text-secondary);cursor:pointer;background:var(--color-background-secondary);transition:all .15s}
+.toggle.on{border-color:var(--color-border-info);background:var(--color-background-info);color:var(--color-text-info)}
+
+.score-col{background:var(--color-background-secondary);display:flex;flex-direction:column)}
+
+.score-header{padding:12px 16px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary)}
+.score-title{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.score-sub{font-size:11px;color:var(--color-text-tertiary)}
+
+.score-body{padding:16px;flex:1}
+
+.risk-meter{text-align:center;padding:16px 0 12px}
+.risk-arc{position:relative;width:130px;height:70px;margin:0 auto}
+.risk-label{font-size:22px;font-weight:500;color:var(--color-text-primary);margin-top:8px}
+.risk-sub{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+
+.confidence-bar{margin:12px 0}
+.cb-label{display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.cb-track{height:6px;border-radius:3px;background:var(--color-border-tertiary);overflow:hidden}
+.cb-fill{height:100%;border-radius:3px;transition:width .8s ease}
+
+.shap-section{margin-top:12px}
+.shap-title{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.shap-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:11px}
+.shap-feature{color:var(--color-text-secondary);width:110px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shap-bar-wrap{flex:1;height:8px;border-radius:4px;background:var(--color-background-primary);overflow:hidden;position:relative}
+.shap-bar{height:100%;border-radius:4px;transition:width .7s ease}
+.shap-val{font-size:10px;color:var(--color-text-tertiary);width:28px;text-align:right;flex-shrink:0}
+
+.action-section{margin-top:14px;padding-top:12px;border-top:0.5px solid var(--color-border-tertiary)}
+.action-title{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.action-item{display:flex;align-items:flex-start;gap:7px;margin-bottom:6px;font-size:11px;color:var(--color-text-primary);line-height:1.4}
+.action-icon{flex-shrink:0;margin-top:1px}
+
+.api-log{border-top:0.5px solid var(--color-border-tertiary);padding:10px 16px;background:var(--color-background-primary);font-family:var(--font-mono);font-size:10px}
+.api-log-title{color:var(--color-text-tertiary);margin-bottom:4px;font-family:var(--font-sans);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.log-line{color:var(--color-text-secondary);margin-bottom:2px}
+.log-line .method{color:#5b8dee}
+.log-line .status-ok{color:#4caf7d}
+.log-line .latency{color:var(--color-text-tertiary)}
+
+.score-btn{width:100%;padding:9px;border-radius:6px;border:none;background:#1a2744;color:#e8eeff;font-size:13px;font-weight:500;cursor:pointer;margin-top:12px;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.score-btn:hover{background:#243558}
+.score-btn:disabled{opacity:.5;cursor:not-allowed}
+
+.idle-state{text-align:center;padding:28px 12px;color:var(--color-text-tertiary);font-size:12px}
+.idle-state i{font-size:32px;display:block;margin-bottom:8px;opacity:.4}
+
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);border-top-color:#e8eeff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .4s ease both}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500}
+.badge-high{background:var(--color-background-danger);color:var(--color-text-danger)}
+.badge-med{background:var(--color-background-warning);color:var(--color-text-warning)}
+.badge-low{background:var(--color-background-success);color:var(--color-text-success)}
+
+.preset-row{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.preset-btn{padding:4px 11px;font-size:11px;border-radius:4px;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);cursor:pointer;background:var(--color-background-secondary);transition:all .15s}
+.preset-btn:hover{border-color:var(--color-border-primary);color:var(--color-text-primary)}
+.preset-btn.sel{border-color:var(--color-border-info);color:var(--color-text-info);background:var(--color-background-info)}
+</style>
+
+<div class="demo">
+
+<div class="ehr-bar">
+  <div class="logo"><i class="ti ti-heart-rate-monitor" aria-hidden="true" style="font-size:14px;margin-right:5px"></i>HerHeart EHR Integration — Clinical Demo</div>
+  <div class="tabs">
+    <div class="ehr-tab on">Triage</div>
+    <div class="ehr-tab">History</div>
+    <div class="ehr-tab">Orders</div>
+    <div class="ehr-tab">Notes</div>
+  </div>
+  <div class="utils">
+    <span><i class="ti ti-wifi" aria-hidden="true"></i> FHIR R4 connected</span>
+    <span><i class="ti ti-shield-check" aria-hidden="true"></i> HIPAA session</span>
+    <span>Dr. A. Martínez</span>
+  </div>
+</div>
+
+<div class="pt-banner">
+  <div>
+    <div class="pt-name">Patient: María García · F · 58 yrs · MRN 00429-A</div>
+    <div class="pt-meta">ED arrival 14:32 · Chief complaint: chest tightness, dyspnea, nausea · Triage nurse: L. Ruiz</div>
+  </div>
+  <div class="pt-alert"><i class="ti ti-alert-triangle" aria-hidden="true" style="font-size:11px;margin-right:3px"></i>Not scored yet</div>
+</div>
+
+<div class="main">
+
+<div class="form-col">
+  <div style="margin-bottom:12px">
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px;font-weight:500">Quick load scenario</div>
+    <div class="preset-row">
+      <button class="preset-btn sel" id="p-custom" onclick="loadPreset('custom')">Custom</button>
+      <button class="preset-btn" id="p-high" onclick="loadPreset('high')">High-risk case</button>
+      <button class="preset-btn" id="p-med" onclick="loadPreset('medium')">Intermediate case</button>
+      <button class="preset-btn" id="p-low" onclick="loadPreset('low')">Low-risk case</button>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title"><i class="ti ti-activity" aria-hidden="true" style="margin-right:4px"></i>Vital signs &amp; presentation</div>
+    <div class="form-row tri">
+      <div class="form-group"><label>Systolic BP (mmHg)</label><input type="number" id="f-sbp" value="148" min="60" max="250"></div>
+      <div class="form-group"><label>Heart rate (bpm)</label><input type="number" id="f-hr" value="96" min="30" max="200"></div>
+      <div class="form-group"><label>SpO₂ (%)</label><input type="number" id="f-spo2" value="97" min="70" max="100"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Chest pain onset</label>
+        <select id="f-onset">
+          <option value="acute">&lt; 1 hour</option>
+          <option value="sub">1–6 hours</option>
+          <option value="chronic">&gt; 6 hours</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Pain severity (0–10)</label><input type="number" id="f-pain" value="6" min="0" max="10"></div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title"><i class="ti ti-flask" aria-hidden="true" style="margin-right:4px"></i>Lab results</div>
+    <div class="form-row tri">
+      <div class="form-group"><label>Troponin I (ng/L)</label><input type="number" id="f-trop" value="38" min="0" max="5000"></div>
+      <div class="form-group"><label>Cholesterol (mg/dL)</label><input type="number" id="f-chol" value="224" min="100" max="400"></div>
+      <div class="form-group"><label>Glucose (mg/dL)</label><input type="number" id="f-gluc" value="118" min="60" max="500"></div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title"><i class="ti ti-dna" aria-hidden="true" style="margin-right:4px"></i>Female-specific history <span style="color:var(--color-text-info);font-weight:500">(auto-pulled via FHIR)</span></div>
+    <div class="toggle-row" id="f-female-toggles">
+      <button class="toggle on" data-val="preeclampsia" onclick="toggleFeature(this)">Preeclampsia hx</button>
+      <button class="toggle" data-val="gest_diabetes" onclick="toggleFeature(this)">Gestational diabetes</button>
+      <button class="toggle on" data-val="early_menopause" onclick="toggleFeature(this)">Early menopause (&lt;45)</button>
+      <button class="toggle" data-val="hrt" onclick="toggleFeature(this)">HRT use</button>
+      <button class="toggle" data-val="pcos" onclick="toggleFeature(this)">PCOS history</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Age at menopause</label><input type="number" id="f-meno" value="43" min="35" max="65"></div>
+      <div class="form-group"><label>Pregnancies (n)</label><input type="number" id="f-preg" value="2" min="0" max="15"></div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title"><i class="ti ti-clipboard-list" aria-hidden="true" style="margin-right:4px"></i>Medical history &amp; lifestyle</div>
+    <div class="toggle-row" id="f-hist-toggles">
+      <button class="toggle on" data-val="htn" onclick="toggleFeature(this)">Hypertension</button>
+      <button class="toggle on" data-val="dyslip" onclick="toggleFeature(this)">Dyslipidaemia</button>
+      <button class="toggle" data-val="dm2" onclick="toggleFeature(this)">Type 2 diabetes</button>
+      <button class="toggle" data-val="smoking" onclick="toggleFeature(this)">Smoking</button>
+      <button class="toggle" data-val="family" onclick="toggleFeature(this)">Family CVD hx</button>
+      <button class="toggle" data-val="prior_cvd" onclick="toggleFeature(this)">Prior CVD event</button>
+    </div>
+  </div>
+
+  <button class="score-btn" id="score-btn" onclick="runScore()">
+    <i class="ti ti-cpu" aria-hidden="true"></i>
+    Run HerHeart risk score
+  </button>
+</div>
+
+<div class="score-col">
+  <div class="score-header">
+    <div class="score-title"><i class="ti ti-brain" aria-hidden="true" style="margin-right:4px"></i>HerHeart AI · Risk output</div>
+    <div class="score-sub">XGBoost + SHAP · Model v2.4.1 · Drift: nominal</div>
+  </div>
+  <div class="score-body" id="score-body">
+    <div class="idle-state">
+      <i class="ti ti-heart-rate-monitor" aria-hidden="true"></i>
+      Fill patient data and click<br>"Run HerHeart risk score"
+    </div>
+  </div>
+  <div class="api-log" id="api-log" style="display:none">
+    <div class="api-log-title">API trace</div>
+    <div class="log-line"><span class="method">POST</span> /v1/score &nbsp;<span class="status-ok">200 OK</span> &nbsp;<span class="latency" id="log-latency">—</span></div>
+    <div class="log-line" style="color:var(--color-text-tertiary)">model: xgb-female-v2.4.1 · features: 41 · drift: nominal</div>
+    <div class="log-line" style="color:var(--color-text-tertiary)">audit_id: <span id="log-audit">—</span></div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<script>
+const activeFeatures = new Set(['preeclampsia','early_menopause','htn','dyslip']);
+
+function toggleFeature(btn) {
+  const v = btn.dataset.val;
+  if(activeFeatures.has(v)){ activeFeatures.delete(v); btn.classList.remove('on'); }
+  else { activeFeatures.add(v); btn.classList.add('on'); }
+}
+
+const PRESETS = {
+  high: {
+    sbp:165, hr:108, spo2:95, pain:8, onset:'acute', trop:420, chol:268, gluc:142, meno:42, preg:3,
+    female:['preeclampsia','early_menopause','gest_diabetes'],
+    hist:['htn','dyslip','dm2','family','prior_cvd']
+  },
+  medium: {
+    sbp:148, hr:96, spo2:97, pain:6, onset:'sub', trop:38, chol:224, gluc:118, meno:43, preg:2,
+    female:['preeclampsia','early_menopause'],
+    hist:['htn','dyslip']
+  },
+  low: {
+    sbp:128, hr:72, spo2:99, pain:3, onset:'chronic', trop:8, chol:188, gluc:95, meno:51, preg:1,
+    female:['hrt'],
+    hist:[]
+  }
+};
+
+function loadPreset(name) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('sel'));
+  document.getElementById('p-'+name).classList.add('sel');
+  if(name === 'custom') return;
+  const p = PRESETS[name];
+  document.getElementById('f-sbp').value = p.sbp;
+  document.getElementById('f-hr').value = p.hr;
+  document.getElementById('f-spo2').value = p.spo2;
+  document.getElementById('f-pain').value = p.pain;
+  document.getElementById('f-onset').value = p.onset;
+  document.getElementById('f-trop').value = p.trop;
+  document.getElementById('f-chol').value = p.chol;
+  document.getElementById('f-gluc').value = p.gluc;
+  document.getElementById('f-meno').value = p.meno;
+  document.getElementById('f-preg').value = p.preg;
+  document.querySelectorAll('#f-female-toggles .toggle').forEach(b => {
+    b.classList.toggle('on', p.female.includes(b.dataset.val));
+    if(p.female.includes(b.dataset.val)) activeFeatures.add(b.dataset.val);
+    else activeFeatures.delete(b.dataset.val);
+  });
+  document.querySelectorAll('#f-hist-toggles .toggle').forEach(b => {
+    b.classList.toggle('on', p.hist.includes(b.dataset.val));
+    if(p.hist.includes(b.dataset.val)) activeFeatures.add(b.dataset.val);
+    else activeFeatures.delete(b.dataset.val);
+  });
+}
+
+function computeScore() {
+  let s = 0;
+  const trop = +document.getElementById('f-trop').value;
+  const sbp  = +document.getElementById('f-sbp').value;
+  const hr   = +document.getElementById('f-hr').value;
+  const spo2 = +document.getElementById('f-spo2').value;
+  const pain = +document.getElementById('f-pain').value;
+  const onset = document.getElementById('f-onset').value;
+  const chol = +document.getElementById('f-chol').value;
+  const gluc = +document.getElementById('f-gluc').value;
+  const meno = +document.getElementById('f-meno').value;
+
+  if(trop > 200) s += 30; else if(trop > 50) s += 20; else if(trop > 14) s += 10;
+  if(sbp > 160) s += 12; else if(sbp > 140) s += 7;
+  if(hr > 100) s += 8; else if(hr > 90) s += 4;
+  if(spo2 < 95) s += 10; else if(spo2 < 98) s += 3;
+  if(onset === 'acute') s += 12; else if(onset === 'sub') s += 6;
+  s += pain * 1.5;
+  if(chol > 240) s += 8; else if(chol > 200) s += 4;
+  if(gluc > 126) s += 7; else if(gluc > 100) s += 3;
+  if(activeFeatures.has('preeclampsia')) s += 14;
+  if(activeFeatures.has('early_menopause') || meno < 45) s += 12;
+  if(activeFeatures.has('gest_diabetes')) s += 10;
+  if(activeFeatures.has('pcos')) s += 6;
+  if(activeFeatures.has('hrt')) s -= 3;
+  if(activeFeatures.has('htn')) s += 8;
+  if(activeFeatures.has('dyslip')) s += 6;
+  if(activeFeatures.has('dm2')) s += 10;
+  if(activeFeatures.has('smoking')) s += 9;
+  if(activeFeatures.has('family')) s += 7;
+  if(activeFeatures.has('prior_cvd')) s += 18;
+
+  const prob = Math.min(0.97, Math.max(0.03, s / 145));
+  return { prob, raw: s };
+}
+
+function buildShap() {
+  const trop = +document.getElementById('f-trop').value;
+  const sbp  = +document.getElementById('f-sbp').value;
+  const hr   = +document.getElementById('f-hr').value;
+  const spo2 = +document.getElementById('f-spo2').value;
+  const meno = +document.getElementById('f-meno').value;
+  const pain = +document.getElementById('f-pain').value;
+  const rows = [
+    { f:'Troponin I', v: trop > 200 ? 0.31 : trop > 50 ? 0.22 : trop > 14 ? 0.11 : 0.02, dir: trop > 14 ? 1 : -1 },
+    { f:'Preeclampsia hx', v: activeFeatures.has('preeclampsia') ? 0.19 : 0.01, dir: activeFeatures.has('preeclampsia') ? 1 : -1 },
+    { f:'Early menopause', v: (activeFeatures.has('early_menopause')||meno<45) ? 0.16 : 0.01, dir: (activeFeatures.has('early_menopause')||meno<45) ? 1 : -1 },
+    { f:'Prior CVD event', v: activeFeatures.has('prior_cvd') ? 0.22 : 0.01, dir: activeFeatures.has('prior_cvd') ? 1 : -1 },
+    { f:'Systolic BP', v: sbp > 160 ? 0.13 : sbp > 140 ? 0.08 : 0.03, dir: sbp > 140 ? 1 : -1 },
+    { f:'Gestational DM', v: activeFeatures.has('gest_diabetes') ? 0.12 : 0.01, dir: activeFeatures.has('gest_diabetes') ? 1 : -1 },
+    { f:'Pain severity', v: Math.round(pain * 0.018 * 100)/100, dir: pain > 5 ? 1 : -1 },
+    { f:'SpO₂', v: spo2 < 95 ? 0.11 : spo2 < 98 ? 0.04 : 0.01, dir: spo2 < 97 ? 1 : -1 },
+    { f:'Type 2 DM', v: activeFeatures.has('dm2') ? 0.11 : 0.01, dir: activeFeatures.has('dm2') ? 1 : -1 },
+    { f:'Heart rate', v: hr > 100 ? 0.09 : hr > 90 ? 0.05 : 0.02, dir: hr > 90 ? 1 : -1 },
+  ].sort((a,b) => b.v - a.v).slice(0,7);
+  return rows;
+}
+
+function arcPath(prob) {
+  const angle = Math.PI * prob;
+  const r = 52;
+  const cx = 65, cy = 65;
+  const sx = cx - r, sy = cy;
+  const ex = cx + Math.cos(Math.PI - angle) * r;
+  const ey = cy - Math.sin(Math.PI - angle) * r;
+  return `M ${sx} ${sy} A ${r} ${r} 0 0 1 ${ex} ${ey}`;
+}
+
+function tierFromProb(p) {
+  if(p >= 0.65) return { label:'HIGH RISK', cls:'badge-high', color:'#e24b4a', tip:'Immediate cardiology review' };
+  if(p >= 0.35) return { label:'INTERMEDIATE', cls:'badge-med', color:'#ba7517', tip:'Urgent diagnostic workup' };
+  return { label:'LOW RISK', cls:'badge-low', color:'#3b6d11', tip:'Standard monitoring, reassess 2h' };
+}
+
+function actions(tier) {
+  if(tier === 'HIGH RISK') return [
+    '12-lead ECG within 10 min',
+    'Serial troponin at 0h / 1h / 3h',
+    'Cardiology consult — STAT',
+    'IV access + aspirin 300mg PO',
+    'Admit to monitored bed',
+  ];
+  if(tier === 'INTERMEDIATE') return [
+    '12-lead ECG + chest X-ray',
+    'Serial troponin 0h / 3h',
+    'Cardiology review within 2h',
+    'Consider early stress testing',
+  ];
+  return [
+    'Standard 12-lead ECG',
+    'Single troponin at 3h',
+    'Reassess symptoms at 2h',
+    'Consider discharge with GP follow-up',
+  ];
+}
+
+async function runScore() {
+  const btn = document.getElementById('score-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Calling HerHeart API…';
+  document.getElementById('score-body').innerHTML = `<div class="idle-state"><div class="spinner" style="margin:0 auto 10px"></div>Sending to FHIR gateway…</div>`;
+  document.getElementById('api-log').style.display = 'none';
+  document.querySelector('.pt-alert').textContent = 'Scoring…';
+
+  await new Promise(r => setTimeout(r, 600));
+  document.getElementById('score-body').innerHTML = `<div class="idle-state"><div class="spinner" style="margin:0 auto 10px"></div>Running XGBoost inference…</div>`;
+
+  await new Promise(r => setTimeout(r, 900));
+
+  const { prob } = computeScore();
+  const pct = Math.round(prob * 100);
+  const tier = tierFromProb(prob);
+  const shap = buildShap();
+  const lat = (Math.random() * 80 + 110).toFixed(0) + 'ms';
+  const audit = 'AUD-' + Math.random().toString(36).slice(2,10).toUpperCase();
+
+  document.getElementById('api-log').style.display = 'block';
+  document.getElementById('log-latency').textContent = lat;
+  document.getElementById('log-audit').textContent = audit;
+
+  const ptAlert = document.querySelector('.pt-alert');
+  ptAlert.className = 'pt-alert';
+  if(prob >= 0.65) ptAlert.style.cssText = 'margin-left:auto;background:#3a1a1a;color:#f09090;font-size:11px;padding:3px 10px;border-radius:4px;border:0.5px solid #6a2a2a';
+  else if(prob >= 0.35) ptAlert.style.cssText = 'margin-left:auto;background:#2e2000;color:#e0a020;font-size:11px;padding:3px 10px;border-radius:4px;border:0.5px solid #5a4000';
+  else ptAlert.style.cssText = 'margin-left:auto;background:#0a2a14;color:#60c87a;font-size:11px;padding:3px 10px;border-radius:4px;border:0.5px solid #1a5a2a';
+  ptAlert.textContent = tier.label;
+
+  const shapRows = shap.map(row => {
+    const w = Math.round(row.v * 280);
+    const col = row.dir > 0 ? '#e24b4a' : '#3b6d11';
+    return `<div class="shap-row">
+      <div class="shap-feature">${row.f}</div>
+      <div class="shap-bar-wrap">
+        <div class="shap-bar" style="width:${w}px;max-width:100%;background:${col}"></div>
+      </div>
+      <div class="shap-val">${row.v > 0.01 ? '+' : ''}${row.v.toFixed(2)}</div>
+    </div>`;
+  }).join('');
+
+  const actionList = actions(tier.label).map(a =>
+    `<div class="action-item"><i class="ti ti-circle-check action-icon" style="font-size:13px;color:${tier.color}" aria-hidden="true"></i>${a}</div>`
+  ).join('');
+
+  document.getElementById('score-body').innerHTML = `
+<div class="fade-in">
+  <div class="risk-meter">
+    <div style="position:relative;width:130px;height:72px;margin:0 auto">
+      <svg width="130" height="72" viewBox="0 0 130 72" aria-hidden="true">
+        <path d="M 13 65 A 52 52 0 0 1 117 65" fill="none" stroke="var(--color-border-secondary)" stroke-width="8" stroke-linecap="round"/>
+        <path d="${arcPath(prob)}" fill="none" stroke="${tier.color}" stroke-width="8" stroke-linecap="round"/>
+        <text x="65" y="62" text-anchor="middle" font-size="13" font-weight="500" fill="${tier.color}">${pct}%</text>
+      </svg>
+    </div>
+    <div style="margin-top:4px">
+      <span class="badge ${tier.cls}" style="font-size:11px;padding:3px 10px">${tier.label}</span>
+    </div>
+    <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:6px">${tier.tip}</div>
+  </div>
+
+  <div class="confidence-bar">
+    <div class="cb-label"><span>Confidence</span><span style="font-weight:500">${pct}%</span></div>
+    <div class="cb-track"><div class="cb-fill" style="width:${pct}%;background:${tier.color}"></div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0;font-size:11px">
+    <div style="padding:8px;background:var(--color-background-primary);border-radius:6px;border:0.5px solid var(--color-border-tertiary)">
+      <div style="color:var(--color-text-tertiary);margin-bottom:2px">Model</div>
+      <div style="color:var(--color-text-primary)">XGBoost v2.4.1</div>
+    </div>
+    <div style="padding:8px;background:var(--color-background-primary);border-radius:6px;border:0.5px solid var(--color-border-tertiary)">
+      <div style="color:var(--color-text-tertiary);margin-bottom:2px">Latency</div>
+      <div style="color:var(--color-text-primary)">${lat}</div>
+    </div>
+  </div>
+
+  <div class="shap-section">
+    <div class="shap-title">Feature contributions (SHAP)</div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--color-text-tertiary);margin-bottom:6px">
+      <span>← reduces risk</span><span>increases risk →</span>
+    </div>
+    ${shapRows}
+  </div>
+
+  <div class="action-section">
+    <div class="action-title">Recommended actions</div>
+    ${actionList}
+  </div>
+</div>`;
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-refresh" aria-hidden="true"></i> Rescore patient';
+}
+</script>

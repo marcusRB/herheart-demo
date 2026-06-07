@@ -1,5 +1,5 @@
 
-<h2 class="sr-only">HerHeart AI — interactive clinical triage demo showing patient risk scoring inside a mock EHR interface</h2>
+<h2 class="sr-only">HerNextBeat AI — interactive clinical triage demo showing patient risk scoring inside a mock EHR interface</h2>
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -96,7 +96,7 @@
 <div class="demo">
 
 <div class="ehr-bar">
-  <div class="logo"><i class="ti ti-heart-rate-monitor" aria-hidden="true" style="font-size:14px;margin-right:5px"></i>HerHeart EHR Integration — Clinical Demo</div>
+  <div class="logo"><i class="ti ti-heart-rate-monitor" aria-hidden="true" style="font-size:14px;margin-right:5px"></i>HerNextBeat EHR Integration — Clinical Demo</div>
   <div class="tabs">
     <div class="ehr-tab on">Triage</div>
     <div class="ehr-tab">History</div>
@@ -188,19 +188,19 @@
 
   <button class="score-btn" id="score-btn" onclick="runScore()">
     <i class="ti ti-cpu" aria-hidden="true"></i>
-    Run HerHeart risk score
+    Run HerNextBeat risk score
   </button>
 </div>
 
 <div class="score-col">
   <div class="score-header">
-    <div class="score-title"><i class="ti ti-brain" aria-hidden="true" style="margin-right:4px"></i>HerHeart AI · Risk output</div>
+    <div class="score-title"><i class="ti ti-brain" aria-hidden="true" style="margin-right:4px"></i>HerNextBeat AI · Risk output</div>
     <div class="score-sub">XGBoost + SHAP · Model v2.4.1 · Drift: nominal</div>
   </div>
   <div class="score-body" id="score-body">
     <div class="idle-state">
       <i class="ti ti-heart-rate-monitor" aria-hidden="true"></i>
-      Fill patient data and click<br>"Run HerHeart risk score"
+      Fill patient data and click<br>"Run HerNextBeat risk score"
     </div>
   </div>
   <div class="api-log" id="api-log" style="display:none">
@@ -367,7 +367,7 @@ function actions(tier) {
 async function runScore() {
   const btn = document.getElementById('score-btn');
   btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> Calling HerHeart API…';
+  btn.innerHTML = '<div class="spinner"></div> Calling HerNextBeat API…';
   document.getElementById('score-body').innerHTML = `<div class="idle-state"><div class="spinner" style="margin:0 auto 10px"></div>Sending to FHIR gateway…</div>`;
   document.getElementById('api-log').style.display = 'none';
   document.querySelector('.pt-alert').textContent = 'Scoring…';

@@ -268,10 +268,10 @@ const Nav = ({ page, setPage }) => {
       transition:"box-shadow .3s" }}>
       <div className="nav-inner">
         <button onClick={() => setPage("Home")} style={{ background:"none", border:"none",
-          fontFamily:"'Lora',serif", fontSize:19, color:"#fff",
+          fontFamily:"'Lora',serif", fontSize:28, color:"#fff",
           display:"flex", alignItems:"center", gap:3, letterSpacing:"-.01em" }}>
-          Her<span style={{ color:"#F0A0C0" }}>Heart</span>
-          <span style={{ fontSize:9, color:"rgba(255,255,255,.45)", fontFamily:"'Inter',sans-serif",
+          Her<span style={{ color:"#F0A0C0" }}>NextBeat</span>
+          <span style={{ fontSize:12, color:"rgba(255,255,255,.45)", fontFamily:"'Inter',sans-serif",
             fontWeight:600, marginLeft:7, letterSpacing:".12em", textTransform:"uppercase" }}>AI</span>
         </button>
         <div className="nav-links">
@@ -324,7 +324,7 @@ const HomePage = ({ setPage }) => (
           </h1>
           <p className="fade-up d2" style={{ fontSize:16, color:"rgba(255,255,255,.65)",
             lineHeight:1.75, marginBottom:36, maxWidth:560, margin:"0 auto 36px" }}>
-            HerHeart is an AI-powered Clinical Decision Support System for hospitals and emergency departments —
+            HerNextBeat is an AI-powered Clinical Decision Support System for hospitals and emergency departments —
             integrating female-specific cardiovascular biomarkers that standard protocols miss.
           </p>
           <div className="fade-up d3" style={{ display:"flex", gap:12, flexWrap:"wrap", justifyContent:"center", marginBottom:36 }}>
@@ -362,7 +362,7 @@ const HomePage = ({ setPage }) => (
             A decision-support layer,<br />not a replacement
           </h2>
           <p style={{ color:T.textMid, fontSize:15, lineHeight:1.8, marginBottom:24 }}>
-            HerHeart plugs into your existing EHR and triage workflow via FHIR R4 API.
+            HerNextBeat plugs into your existing EHR and triage workflow via FHIR R4 API.
             Your clinicians see a risk score — low, intermediate, or high — directly
             inside Epic or Cerner. No new software to learn. No workflow disruption.
           </p>
@@ -596,10 +596,10 @@ const DemoPage = ({ setPage }) => {
               letterSpacing:".1em", fontWeight:600, marginBottom:6 }}>Interactive clinical demo</div>
             <h1 style={{ fontFamily:"'Lora',serif", fontSize:"clamp(22px,2.5vw,32px)",
               color:"#fff", fontWeight:500, letterSpacing:"-.01em", marginBottom:6 }}>
-              HerHeart — Live EHR Triage Simulation
+              HerNextBeat — Live EHR Triage Simulation
             </h1>
             <p style={{ fontSize:13, color:"rgba(255,255,255,.5)", maxWidth:560 }}>
-              Enter patient data as it would appear at triage. HerHeart calls our risk-scoring API
+              Enter patient data as it would appear at triage. HerNextBeat calls our risk-scoring API
               and returns a stratified result with SHAP explanations — exactly as a hospital would see it inside Epic or Cerner.
             </p>
           </div>
@@ -651,7 +651,7 @@ const DemoPage = ({ setPage }) => {
             <div style={{ marginLeft:"auto", background: tier.bg,
               border:`1px solid ${tier.color}44`, borderRadius:6,
               padding:"4px 12px", fontSize:12, fontWeight:600, color:tier.color }}>
-              HerHeart: {tier.label}
+              HerNextBeat: {tier.label}
             </div>
           )}
           {!result && (
@@ -793,8 +793,8 @@ const DemoPage = ({ setPage }) => {
 
             <button className="ehr-score-btn" disabled={scoring} onClick={runScore}>
               {scoring
-                ? <><div className="spin" /> Calling HerHeart API…</>
-                : result ? "↺ Rescore patient" : "▶ Run HerHeart risk score"
+                ? <><div className="spin" /> Calling HerNextBeat API…</>
+                : result ? "↺ Rescore patient" : "▶ Run HerNextBeat risk score"
               }
             </button>
           </div>
@@ -803,7 +803,7 @@ const DemoPage = ({ setPage }) => {
           <div style={{ padding:"20px 0 20px 24px", display:"flex", flexDirection:"column" }}>
             <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase",
               letterSpacing:".08em", color:T.textMuted, marginBottom:14 }}>
-              HerHeart AI · Risk output
+              HerNextBeat AI · Risk output
             </div>
 
             {!result && !scoring && (
@@ -814,7 +814,7 @@ const DemoPage = ({ setPage }) => {
                   <circle cx="20" cy="20" r="19" stroke={T.border2} strokeWidth="1.5" />
                   <path d="M20 12v8l5 3" stroke={T.textFaint} strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
-                Fill patient data and<br />click Run HerHeart
+                Fill patient data and<br />click Run HerNextBeat
               </div>
             )}
 
@@ -936,7 +936,7 @@ const DemoPage = ({ setPage }) => {
       <div style={{ background:T.surfaceAlt, borderTop:`1px solid ${T.border}`,
         padding:"48px clamp(20px,5vw,72px)", textAlign:"center" }}>
         <h2 className="section-title" style={{ fontSize:26, marginBottom:12 }}>
-          Ready to integrate HerHeart into your ED?
+          Ready to integrate HerNextBeat into your ED?
         </h2>
         <p style={{ color:T.textMid, fontSize:14, maxWidth:480, margin:"0 auto 24px", lineHeight:1.8 }}>
           This demo runs a simulation. The real integration connects to your hospital EHR
@@ -963,7 +963,7 @@ const SolutionPage = () => (
           An API that plugs into any<br /><em>hospital EHR workflow</em>
         </h1>
         <p style={{ color:"rgba(255,255,255,.6)", fontSize:15, maxWidth:520, lineHeight:1.8 }}>
-          HerHeart is not a standalone app. It is a stateless clinical intelligence endpoint
+          HerNextBeat is not a standalone app. It is a stateless clinical intelligence endpoint
           that hospitals call from inside Epic, Cerner, or any HL7-compliant system.
         </p>
       </div>
@@ -982,7 +982,7 @@ const SolutionPage = () => (
             { arrow:true },
             { label:"FHIR gateway", sub:"HL7 R4 · PHI de-id · audit log", color:T.teal },
             { arrow:true },
-            { label:"HerHeart API", sub:"XGBoost · SHAP · drift monitor", color:T.rose },
+            { label:"HerNextBeat API", sub:"XGBoost · SHAP · drift monitor", color:T.rose },
           ].map((item,i) => item.arrow
             ? <div key={i} style={{ display:"flex", alignItems:"center",
                 justifyContent:"center", fontSize:18, color:T.border2, padding:"0 8px" }}>→</div>
@@ -1002,9 +1002,9 @@ const SolutionPage = () => (
         <div>
           <h2 className="section-title" style={{ fontSize:28, marginBottom:28 }}>How it works in the ED</h2>
           {[
-            ["01","Patient arrives at ED or primary care","Triage staff input current symptoms. HerHeart auto-pulls historical obstetric and cardiac data via FHIR from the hospital EHR — no manual data entry required."],
+            ["01","Patient arrives at ED or primary care","Triage staff input current symptoms. HerNextBeat auto-pulls historical obstetric and cardiac data via FHIR from the hospital EHR — no manual data entry required."],
             ["02","Model scores in real time","XGBoost ensemble ingests 41 female-specific features. SHAP values explain each prediction. Drift monitoring flags when data distributions shift — essential for long-term accuracy."],
-            ["03","Risk tier appears in the triage screen","Low / intermediate / high + top contributing factors appear inside Epic or Cerner. The clinician decides — HerHeart supports, never replaces clinical judgement."],
+            ["03","Risk tier appears in the triage screen","Low / intermediate / high + top contributing factors appear inside Epic or Cerner. The clinician decides — HerNextBeat supports, never replaces clinical judgement."],
           ].map(([n,t,b]) => (
             <div key={n} style={{ display:"flex", gap:16, paddingBottom:24,
               borderBottom:`1px solid ${T.border}`, marginBottom:24 }}>
@@ -1056,7 +1056,7 @@ const BusinessPage = () => {
             A hospital SaaS model<br />built for <em>institutional procurement</em>
           </h1>
           <p style={{ color:"rgba(255,255,255,.6)", fontSize:15, maxWidth:500, lineHeight:1.8 }}>
-            HerHeart targets hospital procurement departments, not individual clinicians.
+            HerNextBeat targets hospital procurement departments, not individual clinicians.
             One contract, institution-wide deployment, subscription pricing per site.
           </p>
         </div>
@@ -1145,7 +1145,7 @@ const EvidencePage = () => (
       <div className="grid-2" style={{ marginBottom:40 }}>
         {[
           ["Training datasets","MIMIC-IV · NHANES · Women's Health Initiative (WHI) · Nurses' Health Study — validated outcomes labels on a diverse female cohort."],
-          ["Validation plan","Phase 1: retrospective AUC-ROC, sensitivity, specificity, NPV, calibration. Phase 2: prospective pilot comparing HerHeart vs standard clinical triage."],
+          ["Validation plan","Phase 1: retrospective AUC-ROC, sensitivity, specificity, NPV, calibration. Phase 2: prospective pilot comparing HerNextBeat vs standard clinical triage."],
           ["Explainability (XAI)","SHAP values per inference. Feature importance ranked for clinicians. Full audit trail per prediction — required for FDA 510(k) and malpractice defense."],
           ["Drift monitoring","Continuous data and concept drift detection. Alerts when demographic shifts or new treatment protocols alter model input distributions."],
         ].map(([t,b]) => (
@@ -1281,7 +1281,7 @@ const TeamPage = () => (
     <Section>
       <div className="grid-3" style={{ marginBottom:40 }}>
         {[
-          ["Founder / CEO","Health Data Science & Bioinformatics MSc. Background in software engineering and ML. Led the original HerHeart research concept and architecture.","CEO · Strategy · Fundraising"],
+          ["Founder / CEO","Health Data Science & Bioinformatics MSc. Background in software engineering and ML. Led the original HerNextBeat research concept and architecture.","CEO · Strategy · Fundraising"],
           ["Chief Medical Officer","Cardiologist, 15 years ED experience. Led women's cardiac health research at Hospital Clínic Barcelona. Clinical validation lead.","CMO · Clinical validation · KOL"],
           ["Head of ML Engineering","PhD Applied ML. Former researcher on the MIMIC-IV dataset team. Leads model architecture, SHAP pipeline, and drift monitoring system.","CTO · Model · Infrastructure"],
           ["Regulatory Affairs","Specialist in EU MDR and FDA SaMD. Led CE mark submission for two Class IIa devices. Owns the 510(k) filing.","Regulatory · Compliance · Legal"],
@@ -1398,7 +1398,7 @@ const ContactPage = () => {
           </div>
         )}
         <div className="grid-3" style={{ marginTop:32 }}>
-          {[["Email","hello@herheart.ai"],["Based in","London, England · UK"],["Response time","Within 48 h"]].map(([k,v]) => (
+          {[["Email","hello@hernextbeat.ai"],["Based in","London, England · UK"],["Response time","Within 48 h"]].map(([k,v]) => (
             <div key={k} style={{ textAlign:"center", padding:16,
               borderRight: k !== "Response time" ? `1px solid ${T.border}` : "none" }}>
               <div style={{ fontSize:10, fontWeight:600, color:T.textMuted,
@@ -1421,9 +1421,9 @@ const Footer = ({ setPage }) => (
       <div style={{ display:"flex", justifyContent:"space-between",
         alignItems:"flex-start", flexWrap:"wrap", gap:32, marginBottom:40 }}>
         <div>
-          <div style={{ fontFamily:"'Lora',serif", fontSize:22, color:"#fff", marginBottom:10 }}>
-            Her<span style={{ color:"#F0A0C0" }}>Heart</span>
-            <span style={{ fontSize:9, color:"rgba(255,255,255,.35)", fontFamily:"'Inter',sans-serif",
+          <div style={{ fontFamily:"'Lora',serif", fontSize:28, color:"#fff", marginBottom:10 }}>
+            Her<span style={{ color:"#F0A0C0" }}>NextBeat</span>
+            <span style={{ fontSize:12, color:"rgba(255,255,255,.35)", fontFamily:"'Inter',sans-serif",
               fontWeight:600, marginLeft:7, letterSpacing:".12em" }}>AI</span>
           </div>
           <div style={{ fontSize:13, color:"rgba(255,255,255,.45)", maxWidth:240, lineHeight:1.75 }}>
@@ -1433,14 +1433,14 @@ const Footer = ({ setPage }) => (
         <div style={{ display:"flex", gap:52, flexWrap:"wrap" }}>
           {[["Platform",["Solution","Demo","Evidence"]],
             ["Company",["Business","Team","Funding"]],
-            ["Contact",["Contact","hello@herheart.ai","Press kit"]],
+            ["Contact",["Contact","hello@hernextbeat.ai","Press kit"]],
           ].map(([group, links]) => (
             <div key={group}>
               <div style={{ fontSize:10, color:"rgba(255,255,255,.35)", textTransform:"uppercase",
                 letterSpacing:".1em", marginBottom:14, fontWeight:600 }}>{group}</div>
               {links.map(l => (
                 <div key={l} style={{ marginBottom:10 }}>
-                  <span onClick={() => setPage(l === "hello@herheart.ai" || l === "Press kit" ? "Contact" : l)}
+                  <span onClick={() => setPage(l === "hello@hernextbeat.ai" || l === "Press kit" ? "Contact" : l)}
                     style={{ fontSize:13, color:"rgba(255,255,255,.45)", cursor:"pointer",
                       transition:"color .15s" }}
                     onMouseEnter={e => e.target.style.color="#fff"}
@@ -1453,7 +1453,7 @@ const Footer = ({ setPage }) => (
       </div>
       <div style={{ borderTop:"1px solid rgba(255,255,255,.08)", paddingTop:24,
         display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
-        <span style={{ fontSize:11, color:"rgba(255,255,255,.25)" }}>© 2026 HerHeart AI SL · Madrid, Spain</span>
+        <span style={{ fontSize:11, color:"rgba(255,255,255,.25)" }}>© 2026 HerNextBeat AI SL · Madrid, Spain</span>
         <span style={{ fontSize:11, color:"rgba(255,255,255,.25)" }}>GDPR · HIPAA BAA · CE SaMD · FDA 510(k) pathway</span>
       </div>
     </div>

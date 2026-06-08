@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import herheartEhrFullDemoHtml from "./herheart_ehr_full_demo.html?raw";
 
 // ─── Design tokens — Healthcare B2B palette ───────────────────────────────────
 // Navy authority + clinical teal + rose/mauve for women's health
@@ -214,6 +215,69 @@ const GLOBAL_CSS = `
   ::-webkit-scrollbar-thumb { background:${T.border2}; border-radius:3px; }
 `;
 
+const buildHerheartFullDemoSrcDoc = (templateSource) => {
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.1/dist/tabler-icons.min.css" />
+    <style>
+      :root {
+        --font-sans: 'Inter', sans-serif;
+        --font-serif: 'Lora', serif;
+        --font-mono: 'SFMono-Regular', 'SF Mono', 'Cascadia Code', Consolas, 'Liberation Mono', Menlo, monospace;
+        --border-radius-md: 10px;
+        --border-radius-lg: 14px;
+        --color-background-primary: ${T.surface};
+        --color-background-secondary: ${T.surfaceAlt};
+        --color-background-tertiary: ${T.bg};
+        --color-background-info: ${T.tealFaint};
+        --color-background-success: ${T.successFaint};
+        --color-background-warning: ${T.amberFaint};
+        --color-background-danger: ${T.dangerFaint};
+        --color-text-primary: ${T.text};
+        --color-text-secondary: ${T.textMid};
+        --color-text-tertiary: ${T.textMuted};
+        --color-text-info: ${T.teal};
+        --color-text-success: ${T.success};
+        --color-text-warning: ${T.amber};
+        --color-text-danger: ${T.danger};
+        --color-border-primary: ${T.border2};
+        --color-border-secondary: ${T.border2};
+        --color-border-tertiary: ${T.border};
+        --color-border-info: ${T.teal};
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: ${T.bg};
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    ${templateSource}
+  </body>
+</html>`;
+};
+const HERHEART_EHR_FULL_DEMO_SRCDOC = buildHerheartFullDemoSrcDoc(herheartEhrFullDemoHtml);
+
 // ─── Shared components ────────────────────────────────────────────────────────
 const Dot = () => <span className="dot" />;
 const LabelTag = ({ children }) => <div className="label-tag"><Dot />{children}</div>;
@@ -305,7 +369,6 @@ const Nav = ({ page, setPage }) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 const HomePage = ({ setPage }) => (
   <div>
-    {/* Hero */}
     <div style={{ paddingTop:58 }}>
       <div style={{ background:`linear-gradient(135deg, ${T.navBg} 0%, ${T.navyMid} 100%)`,
         padding:"80px clamp(20px,5vw,72px) 72px", textAlign:"center" }}>
@@ -353,7 +416,6 @@ const HomePage = ({ setPage }) => (
 
     <Marquee />
 
-    {/* B2B value proposition */}
     <Section>
       <div className="layout-two">
         <div>
@@ -395,7 +457,6 @@ const HomePage = ({ setPage }) => (
 
     <Divider />
 
-    {/* Problem stats */}
     <Section style={{ background:T.surfaceAlt, maxWidth:"100%", padding:"72px clamp(20px,5vw,72px)" }}>
       <div style={{ maxWidth:1120, margin:"0 auto" }}>
         <div style={{ textAlign:"center", marginBottom:48 }}>
@@ -418,7 +479,7 @@ const HomePage = ({ setPage }) => (
             ["Preeclampsia history","Doubles lifetime CVD risk. Absent from TIMI, HEART, and Grace scores.","rose"],
             ["Early menopause","Menopause before 45 = significant independent CVD risk factor. Ignored in triage.","rose"],
             ["Gestational diabetes","10× higher risk of type 2 DM and CVD. Never captured in acute risk tools.","rose"],
-          ].map(([t,b,ac]) => (
+          ].map(([t,b]) => (
             <div key={t} className="card" style={{ borderTop:`3px solid ${T.rose}` }}>
               <div style={{ fontSize:11, fontWeight:600, textTransform:"uppercase",
                 letterSpacing:".08em", color:T.rose, marginBottom:8 }}>{t}</div>
@@ -431,7 +492,6 @@ const HomePage = ({ setPage }) => (
 
     <Divider />
 
-    {/* CTA */}
     <Section style={{ textAlign:"center" }}>
       <LabelTag>Pilot programme — Q4 2026</LabelTag>
       <h2 className="section-title" style={{ marginBottom:16 }}>
@@ -453,141 +513,54 @@ const HomePage = ({ setPage }) => (
 // PAGE: DEMO — Integrated EHR triage simulation
 // ═══════════════════════════════════════════════════════════════════════════════
 const DemoPage = ({ setPage }) => {
-  const [activeFeatures, setActiveFeatures] = useState(new Set(["preeclampsia","early_menopause","htn","dyslip"]));
-  const [fields, setFields] = useState({ sbp:148, hr:96, spo2:97, pain:6, onset:"sub", trop:38, chol:224, gluc:118, meno:43, preg:2 });
-  const [preset, setPreset] = useState("medium");
-  const [scoring, setScoring] = useState(false);
-  const [result, setResult] = useState(null);
-  const [logTime, setLogTime] = useState(null);
-  const [logAudit, setLogAudit] = useState(null);
+  const iframeRef = useRef(null);
+  const iframeCleanupRef = useRef(() => {});
 
-  const PRESETS = {
-    high:   { sbp:168, hr:112, spo2:94, pain:9, onset:"acute", trop:520, chol:272, gluc:148, meno:42, preg:3,
-               female:["preeclampsia","early_menopause","gest_diabetes"], hist:["htn","dyslip","dm2","family","prior_cvd"] },
-    medium: { sbp:148, hr:96,  spo2:97, pain:6, onset:"sub",   trop:38,  chol:224, gluc:118, meno:43, preg:2,
-               female:["preeclampsia","early_menopause"],            hist:["htn","dyslip"] },
-    low:    { sbp:126, hr:70,  spo2:99, pain:2, onset:"chronic",trop:7,   chol:186, gluc:92,  meno:51, preg:1,
-               female:["hrt"],                                       hist:[] },
+  const syncIframeHeight = () => {
+    const iframe = iframeRef.current;
+    const doc = iframe?.contentDocument;
+
+    if (!iframe || !doc) return;
+
+    const nextHeight = Math.max(
+      doc.documentElement?.scrollHeight ?? 0,
+      doc.body?.scrollHeight ?? 0,
+    );
+
+    if (nextHeight > 0) {
+      iframe.style.height = `${nextHeight}px`;
+    }
   };
 
-  const loadPreset = (name) => {
-    if (name === "custom") { setPreset("custom"); return; }
-    const p = PRESETS[name];
-    setPreset(name);
-    setFields({ sbp:p.sbp, hr:p.hr, spo2:p.spo2, pain:p.pain, onset:p.onset,
-      trop:p.trop, chol:p.chol, gluc:p.gluc, meno:p.meno, preg:p.preg });
-    const next = new Set([...p.female, ...p.hist]);
-    setActiveFeatures(next);
-    setResult(null);
+  const handleIframeLoad = () => {
+    iframeCleanupRef.current();
+
+    const iframe = iframeRef.current;
+    const frameWindow = iframe?.contentWindow;
+    const doc = iframe?.contentDocument;
+
+    if (!iframe || !frameWindow || !doc) return;
+
+    syncIframeHeight();
+
+    let resizeObserver = null;
+    if (typeof frameWindow.ResizeObserver === "function") {
+      resizeObserver = new frameWindow.ResizeObserver(syncIframeHeight);
+      resizeObserver.observe(doc.documentElement);
+      if (doc.body) resizeObserver.observe(doc.body);
+    }
+
+    frameWindow.addEventListener("resize", syncIframeHeight);
+    iframeCleanupRef.current = () => {
+      resizeObserver?.disconnect();
+      frameWindow.removeEventListener("resize", syncIframeHeight);
+    };
   };
 
-  const toggleFeat = (key) => {
-    setActiveFeatures(prev => {
-      const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
-      return next;
-    });
-  };
-
-  const setField = (k, v) => setFields(f => ({ ...f, [k]: v }));
-
-  const computeScore = () => {
-    let s = 0;
-    const { sbp, hr, spo2, pain, onset, trop, chol, gluc, meno } = fields;
-    const af = activeFeatures;
-    if (trop > 200) s+=30; else if (trop > 50) s+=20; else if (trop > 14) s+=10;
-    if (sbp > 160) s+=12; else if (sbp > 140) s+=7;
-    if (hr > 100) s+=8; else if (hr > 90) s+=4;
-    if (spo2 < 95) s+=10; else if (spo2 < 98) s+=3;
-    if (onset === "acute") s+=12; else if (onset === "sub") s+=6;
-    s += pain * 1.5;
-    if (chol > 240) s+=8; else if (chol > 200) s+=4;
-    if (gluc > 126) s+=7; else if (gluc > 100) s+=3;
-    if (af.has("preeclampsia")) s+=14;
-    if (af.has("early_menopause") || meno < 45) s+=12;
-    if (af.has("gest_diabetes")) s+=10;
-    if (af.has("pcos")) s+=6;
-    if (af.has("hrt")) s-=3;
-    if (af.has("htn")) s+=8;
-    if (af.has("dyslip")) s+=6;
-    if (af.has("dm2")) s+=10;
-    if (af.has("smoking")) s+=9;
-    if (af.has("family")) s+=7;
-    if (af.has("prior_cvd")) s+=18;
-    return Math.min(0.97, Math.max(0.03, s / 145));
-  };
-
-  const buildShap = (prob) => {
-    const { sbp, hr, spo2, pain, meno, trop } = fields;
-    const af = activeFeatures;
-    return [
-      { f:"Troponin I",       v: trop>200?.31:trop>50?.22:trop>14?.10:.02, pos: trop>14 },
-      { f:"Prior CVD event",  v: af.has("prior_cvd")?.22:.01,              pos: af.has("prior_cvd") },
-      { f:"Preeclampsia hx",  v: af.has("preeclampsia")?.19:.01,           pos: af.has("preeclampsia") },
-      { f:"Early menopause",  v: (af.has("early_menopause")||meno<45)?.16:.01, pos: af.has("early_menopause")||meno<45 },
-      { f:"Systolic BP",      v: sbp>160?.13:sbp>140?.08:.03,              pos: sbp>140 },
-      { f:"Gestational DM",   v: af.has("gest_diabetes")?.12:.01,          pos: af.has("gest_diabetes") },
-      { f:"Type 2 DM",        v: af.has("dm2")?.11:.01,                    pos: af.has("dm2") },
-      { f:"SpO₂",             v: spo2<95?.11:spo2<98?.04:.01,              pos: spo2<97 },
-      { f:"Pain severity",    v: Math.round(pain*.018*100)/100,             pos: pain>5 },
-      { f:"Heart rate",       v: hr>100?.09:hr>90?.05:.02,                 pos: hr>90 },
-    ].sort((a,b) => b.v - a.v).slice(0, 7);
-  };
-
-  const runScore = async () => {
-    setScoring(true); setResult(null);
-    await new Promise(r => setTimeout(r, 500));
-    await new Promise(r => setTimeout(r, 900));
-    const prob = computeScore();
-    const shap = buildShap(prob);
-    const lat = (Math.random()*80+110).toFixed(0);
-    const audit = "AUD-" + Math.random().toString(36).slice(2,10).toUpperCase();
-    setLogTime(lat); setLogAudit(audit);
-    setResult({ prob, shap });
-    setScoring(false);
-  };
-
-  const pct = result ? Math.round(result.prob * 100) : 0;
-  const tier = !result ? null
-    : result.prob >= 0.65 ? { label:"HIGH RISK",     color:T.danger,  bg:T.dangerFaint,  tip:"Immediate cardiology review required" }
-    : result.prob >= 0.35 ? { label:"INTERMEDIATE",  color:T.amber,   bg:T.amberFaint,   tip:"Urgent diagnostic workup — refer to cardiology" }
-    :                        { label:"LOW RISK",      color:T.success, bg:T.successFaint, tip:"Standard monitoring, reassess at 2h" };
-
-  const actions = !tier ? [] : tier.label === "HIGH RISK"
-    ? ["12-lead ECG within 10 min","Serial troponin 0h / 1h / 3h","Cardiology consult — STAT","IV access + aspirin 300mg PO","Admit to monitored cardiology bed"]
-    : tier.label === "INTERMEDIATE"
-    ? ["12-lead ECG + chest X-ray","Serial troponin 0h / 3h","Cardiology review within 2h","Consider early exercise stress test"]
-    : ["Standard 12-lead ECG","Single troponin at 3h","Reassess symptoms at 2h","Consider discharge with GP follow-up"];
-
-  const FEMALE_TOGGLES = [
-    { key:"preeclampsia",   label:"Preeclampsia hx" },
-    { key:"gest_diabetes",  label:"Gestational DM" },
-    { key:"early_menopause",label:"Early menopause" },
-    { key:"hrt",            label:"HRT use" },
-    { key:"pcos",           label:"PCOS history" },
-  ];
-  const HIST_TOGGLES = [
-    { key:"htn",      label:"Hypertension" },
-    { key:"dyslip",   label:"Dyslipidaemia" },
-    { key:"dm2",      label:"Type 2 DM" },
-    { key:"smoking",  label:"Smoking" },
-    { key:"family",   label:"Family CVD hx" },
-    { key:"prior_cvd",label:"Prior CVD event" },
-  ];
-
-  const Lbl = ({ children }) => (
-    <div style={{ fontSize:10, fontWeight:600, textTransform:"uppercase",
-      letterSpacing:".07em", color:T.textMuted, marginBottom:4 }}>{children}</div>
-  );
-  const FG = ({ label, children }) => (
-    <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
-      <Lbl>{label}</Lbl>{children}
-    </div>
-  );
+  useEffect(() => () => iframeCleanupRef.current(), []);
 
   return (
     <div style={{ paddingTop:58 }}>
-      {/* Demo hero */}
       <div style={{ background:T.navBg, padding:"32px clamp(20px,5vw,72px) 28px" }}>
         <div style={{ maxWidth:1120, margin:"0 auto", display:"flex", alignItems:"center",
           justifyContent:"space-between", gap:20, flexWrap:"wrap" }}>
@@ -596,11 +569,11 @@ const DemoPage = ({ setPage }) => {
               letterSpacing:".1em", fontWeight:600, marginBottom:6 }}>Interactive clinical demo</div>
             <h1 style={{ fontFamily:"'Lora',serif", fontSize:"clamp(22px,2.5vw,32px)",
               color:"#fff", fontWeight:500, letterSpacing:"-.01em", marginBottom:6 }}>
-              HerNextBeat — Live EHR Triage Simulation
+              HerNextBeat — Full EHR Workflow Simulation
             </h1>
-            <p style={{ fontSize:13, color:"rgba(255,255,255,.5)", maxWidth:560 }}>
-              Enter patient data as it would appear at triage. HerNextBeat calls our risk-scoring API
-              and returns a stratified result with SHAP explanations — exactly as a hospital would see it inside Epic or Cerner.
+            <p style={{ fontSize:13, color:"rgba(255,255,255,.5)", maxWidth:640, lineHeight:1.8 }}>
+              The existing live demo has been replaced with the full multi-tab EHR prototype,
+              including triage, patient history, orders, notes, and imaging inside a single embedded workflow.
             </p>
           </div>
           <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
@@ -612,335 +585,28 @@ const DemoPage = ({ setPage }) => {
         </div>
       </div>
 
-      {/* EHR chrome */}
-      <div style={{ background:T.ehrBg, padding:"0 clamp(20px,5vw,72px)" }}>
-        <div style={{ maxWidth:1120, margin:"0 auto" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:0,
-            borderBottom:`1px solid ${T.ehrBorder}`, height:38 }}>
-            {["Triage","Patient history","Orders","Notes","Imaging"].map((tab, i) => (
-              <div key={tab} style={{ padding:"0 18px", height:"100%", display:"flex",
-                alignItems:"center", fontSize:12,
-                color: i===0 ? "#fff" : "rgba(255,255,255,.4)",
-                borderBottom: i===0 ? `2px solid ${T.tealLight}` : "2px solid transparent",
-                fontWeight: i===0 ? 500 : 400, cursor:"pointer" }}>{tab}</div>
-            ))}
-            <div style={{ marginLeft:"auto", display:"flex", gap:16, alignItems:"center",
-              fontSize:11, color:"rgba(255,255,255,.35)", paddingRight:4 }}>
-              <span>FHIR R4 connected</span>
-              <span>|</span>
-              <span>Dr. A. Martínez · ED Attending</span>
-            </div>
-          </div>
+      <Section style={{ maxWidth:1200, paddingTop:32 }}>
+        <div className="card" style={{ padding:16, overflow:"hidden" }}>
+          <iframe
+            ref={iframeRef}
+            title="HerNextBeat full EHR clinical demo"
+            srcDoc={HERHEART_EHR_FULL_DEMO_SRCDOC}
+            sandbox="allow-scripts allow-same-origin"
+            loading="eager"
+            onLoad={handleIframeLoad}
+            style={{ width:"100%", minHeight:1400, border:"none", display:"block", background:T.bg }}
+          />
         </div>
-      </div>
+      </Section>
 
-      {/* Patient banner */}
-      <div style={{ background:"#0E2A1C", borderBottom:`1px solid #1A4A2E`,
-        padding:"9px clamp(20px,5vw,72px)" }}>
-        <div style={{ maxWidth:1120, margin:"0 auto", display:"flex",
-          alignItems:"center", gap:24, flexWrap:"wrap" }}>
-          <div>
-            <span style={{ fontSize:13, fontWeight:600, color:"#90D4A8" }}>
-              García López, María · F · 58 y · MRN 00429-A
-            </span>
-            <span style={{ fontSize:11, color:"rgba(144,212,168,.55)", marginLeft:16 }}>
-              ED arrival 14:32 · Chief complaint: chest tightness, dyspnea, nausea
-            </span>
-          </div>
-          {result && tier && (
-            <div style={{ marginLeft:"auto", background: tier.bg,
-              border:`1px solid ${tier.color}44`, borderRadius:6,
-              padding:"4px 12px", fontSize:12, fontWeight:600, color:tier.color }}>
-              HerNextBeat: {tier.label}
-            </div>
-          )}
-          {!result && (
-            <div style={{ marginLeft:"auto", background:"rgba(255,255,255,.05)",
-              border:"1px solid rgba(255,255,255,.1)", borderRadius:6,
-              padding:"4px 12px", fontSize:11, color:"rgba(255,255,255,.35)" }}>
-              Not scored yet
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main demo area */}
-      <div style={{ background:T.bg, padding:"0 clamp(20px,5vw,72px)" }}>
-        <div style={{ maxWidth:1120, margin:"0 auto", display:"grid",
-          gridTemplateColumns:"1fr 300px", minHeight:580 }}>
-
-          {/* Form column */}
-          <div style={{ padding:"20px 28px 20px 0", borderRight:`1px solid ${T.border}` }}>
-
-            {/* Preset selector */}
-            <div style={{ marginBottom:16 }}>
-              <Lbl>Quick-load scenario</Lbl>
-              <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                {[["high","High-risk case"],["medium","Intermediate case"],["low","Low-risk case"],["custom","Custom"]].map(([k,l]) => (
-                  <button key={k} className="ehr-toggle" style={{ fontWeight:500 }}
-                    onClick={() => loadPreset(k)}
-                    data-on={preset===k}>
-                    <span style={{ color: preset===k ? T.teal : T.textMuted, fontWeight: preset===k ? 600 : 400 }}>{l}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Section: Vitals */}
-            <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:14, marginBottom:14 }}>
-              <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase",
-                letterSpacing:".08em", color:T.teal, marginBottom:10 }}>
-                Vital signs &amp; presentation
-              </div>
-              <div className="compact-grid compact-grid-3" style={{ marginBottom:10 }}>
-                <FG label="Systolic BP (mmHg)">
-                  <input className="ehr-input" type="number" value={fields.sbp}
-                    onChange={e=>setField("sbp",+e.target.value)} min={60} max={250} />
-                </FG>
-                <FG label="Heart rate (bpm)">
-                  <input className="ehr-input" type="number" value={fields.hr}
-                    onChange={e=>setField("hr",+e.target.value)} min={30} max={200} />
-                </FG>
-                <FG label="SpO₂ (%)">
-                  <input className="ehr-input" type="number" value={fields.spo2}
-                    onChange={e=>setField("spo2",+e.target.value)} min={70} max={100} />
-                </FG>
-              </div>
-              <div className="compact-grid compact-grid-2" style={{ gap:10 }}>
-                <FG label="Chest pain onset">
-                  <select className="ehr-select" value={fields.onset}
-                    onChange={e=>setField("onset",e.target.value)}>
-                    <option value="acute">&lt; 1 hour</option>
-                    <option value="sub">1–6 hours</option>
-                    <option value="chronic">&gt; 6 hours</option>
-                  </select>
-                </FG>
-                <FG label="Pain severity (0–10)">
-                  <input className="ehr-input" type="number" value={fields.pain}
-                    onChange={e=>setField("pain",+e.target.value)} min={0} max={10} />
-                </FG>
-              </div>
-            </div>
-
-            {/* Section: Labs */}
-            <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:14, marginBottom:14 }}>
-              <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase",
-                letterSpacing:".08em", color:T.teal, marginBottom:10 }}>
-                Laboratory results
-              </div>
-              <div className="compact-grid compact-grid-3">
-                <FG label="Troponin I (ng/L)">
-                  <input className="ehr-input" type="number" value={fields.trop}
-                    onChange={e=>setField("trop",+e.target.value)} min={0} max={5000} />
-                </FG>
-                <FG label="Cholesterol (mg/dL)">
-                  <input className="ehr-input" type="number" value={fields.chol}
-                    onChange={e=>setField("chol",+e.target.value)} min={100} max={400} />
-                </FG>
-                <FG label="Glucose (mg/dL)">
-                  <input className="ehr-input" type="number" value={fields.gluc}
-                    onChange={e=>setField("gluc",+e.target.value)} min={60} max={500} />
-                </FG>
-              </div>
-            </div>
-
-            {/* Section: Female-specific */}
-            <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:14, marginBottom:14 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-                <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase",
-                  letterSpacing:".08em", color:T.rose }}>
-                  Female-specific history
-                </div>
-                <span style={{ fontSize:10, color:T.teal, fontWeight:500,
-                  background:T.tealFaint, border:`1px solid ${T.teal}33`,
-                  borderRadius:4, padding:"1px 7px" }}>auto-retrieved via FHIR</span>
-              </div>
-              <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
-                {FEMALE_TOGGLES.map(({ key, label }) => (
-                  <button key={key} className={`ehr-toggle ${activeFeatures.has(key) ? "on" : ""}`}
-                    onClick={() => toggleFeat(key)}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <div className="compact-grid compact-grid-2" style={{ gap:10 }}>
-                <FG label="Age at menopause">
-                  <input className="ehr-input" type="number" value={fields.meno}
-                    onChange={e=>setField("meno",+e.target.value)} min={35} max={65} />
-                </FG>
-                <FG label="Pregnancies (n)">
-                  <input className="ehr-input" type="number" value={fields.preg}
-                    onChange={e=>setField("preg",+e.target.value)} min={0} max={15} />
-                </FG>
-              </div>
-            </div>
-
-            {/* Section: Medical history */}
-            <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:14, marginBottom:16 }}>
-              <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase",
-                letterSpacing:".08em", color:T.teal, marginBottom:10 }}>
-                Medical history &amp; lifestyle
-              </div>
-              <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                {HIST_TOGGLES.map(({ key, label }) => (
-                  <button key={key} className={`ehr-toggle ${activeFeatures.has(key) ? "on" : ""}`}
-                    onClick={() => toggleFeat(key)}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button className="ehr-score-btn" disabled={scoring} onClick={runScore}>
-              {scoring
-                ? <><div className="spin" /> Calling HerNextBeat API…</>
-                : result ? "↺ Rescore patient" : "▶ Run HerNextBeat risk score"
-              }
-            </button>
-          </div>
-
-          {/* Result column */}
-          <div style={{ padding:"20px 0 20px 24px", display:"flex", flexDirection:"column" }}>
-            <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase",
-              letterSpacing:".08em", color:T.textMuted, marginBottom:14 }}>
-              HerNextBeat AI · Risk output
-            </div>
-
-            {!result && !scoring && (
-              <div style={{ flex:1, display:"flex", flexDirection:"column",
-                alignItems:"center", justifyContent:"center", textAlign:"center",
-                color:T.textFaint, fontSize:13, gap:10 }}>
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-                  <circle cx="20" cy="20" r="19" stroke={T.border2} strokeWidth="1.5" />
-                  <path d="M20 12v8l5 3" stroke={T.textFaint} strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-                Fill patient data and<br />click Run HerNextBeat
-              </div>
-            )}
-
-            {scoring && (
-              <div style={{ flex:1, display:"flex", flexDirection:"column",
-                alignItems:"center", justifyContent:"center", gap:12 }}>
-                <div className="spin" style={{ width:28, height:28,
-                  borderWidth:3, borderTopColor:T.teal }} />
-                <div style={{ fontSize:12, color:T.textMuted }}>Running inference…</div>
-              </div>
-            )}
-
-            {result && tier && (
-              <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-                {/* Risk tier */}
-                <div style={{ background:tier.bg, border:`1px solid ${tier.color}33`,
-                  borderRadius:10, padding:"16px 18px", textAlign:"center" }}>
-                  <div style={{ fontSize:11, color:tier.color, fontWeight:700,
-                    letterSpacing:".1em", textTransform:"uppercase", marginBottom:4 }}>
-                    {tier.label}
-                  </div>
-                  <div style={{ fontFamily:"'Lora',serif", fontSize:38,
-                    color:tier.color, fontWeight:500, lineHeight:1 }}>
-                    {pct}%
-                  </div>
-                  <div style={{ fontSize:11, color:tier.color, opacity:.75,
-                    marginTop:6, lineHeight:1.5 }}>{tier.tip}</div>
-                </div>
-
-                {/* Confidence bar */}
-                <div>
-                  <div style={{ display:"flex", justifyContent:"space-between",
-                    fontSize:10, color:T.textMuted, marginBottom:4 }}>
-                    <span>Confidence</span>
-                    <span style={{ fontWeight:600, color:T.text }}>{pct}%</span>
-                  </div>
-                  <div style={{ height:6, borderRadius:3, background:T.border, overflow:"hidden" }}>
-                    <div style={{ height:"100%", borderRadius:3, background:tier.color,
-                      width:`${pct}%`, transition:"width .8s ease" }} />
-                  </div>
-                </div>
-
-                {/* Meta */}
-                <div className="compact-grid result-meta-grid">
-                  {[["Model","XGBoost v2.4.1"],["Latency",`${logTime} ms`],["Features","41 inputs"],["Drift","Nominal"]].map(([k,v]) => (
-                    <div key={k} style={{ background:T.surfaceAlt, borderRadius:7,
-                      padding:"8px 10px", border:`1px solid ${T.border}` }}>
-                      <div style={{ fontSize:10, color:T.textMuted, marginBottom:2 }}>{k}</div>
-                      <div style={{ fontSize:12, fontWeight:600, color:T.navy }}>{v}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* SHAP */}
-                <div>
-                  <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase",
-                    letterSpacing:".08em", color:T.textMuted, marginBottom:8 }}>
-                    Feature contributions (SHAP)
-                  </div>
-                  {result.shap.map((row) => {
-                    const barW = Math.round(row.v * 200);
-                    const col = row.pos ? T.danger : T.success;
-                    return (
-                      <div key={row.f} style={{ display:"flex", alignItems:"center",
-                        gap:6, marginBottom:5, fontSize:11 }}>
-                        <div style={{ width:100, flexShrink:0, color:T.textMuted,
-                          overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                          {row.f}
-                        </div>
-                        <div style={{ flex:1, height:7, borderRadius:4,
-                          background:T.surfaceAlt, overflow:"hidden" }}>
-                          <div style={{ height:"100%", borderRadius:4, background:col,
-                            width:`${Math.min(barW, 100)}%`, transition:"width .7s ease" }} />
-                        </div>
-                        <div style={{ width:30, textAlign:"right",
-                          color:T.textMuted, fontSize:10 }}>
-                          {row.v > 0.01 ? "+" : ""}{row.v.toFixed(2)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Actions */}
-                <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:12 }}>
-                  <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase",
-                    letterSpacing:".08em", color:T.textMuted, marginBottom:8 }}>
-                    Recommended pathway
-                  </div>
-                  {actions.map((a, i) => (
-                    <div key={i} style={{ display:"flex", gap:7, marginBottom:5,
-                      fontSize:11, color:T.textMid, lineHeight:1.5 }}>
-                      <span style={{ color:tier.color, flexShrink:0, marginTop:1 }}>✓</span>
-                      {a}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* API log bar */}
-        {result && (
-          <div style={{ borderTop:`1px solid ${T.border}`, padding:"10px 0",
-            display:"flex", gap:24, fontSize:11, color:T.textMuted,
-            fontFamily:"'Courier New', monospace" }}>
-            <span><span style={{ color:T.teal }}>POST</span> /v1/score</span>
-            <span style={{ color:T.success }}>200 OK</span>
-            <span>{logTime} ms</span>
-            <span>model: xgb-female-v2.4.1</span>
-            <span>audit: {logAudit}</span>
-            <span>drift: nominal</span>
-          </div>
-        )}
-      </div>
-
-      {/* Below demo CTA */}
       <div style={{ background:T.surfaceAlt, borderTop:`1px solid ${T.border}`,
         padding:"48px clamp(20px,5vw,72px)", textAlign:"center" }}>
         <h2 className="section-title" style={{ fontSize:26, marginBottom:12 }}>
           Ready to integrate HerNextBeat into your ED?
         </h2>
-        <p style={{ color:T.textMid, fontSize:14, maxWidth:480, margin:"0 auto 24px", lineHeight:1.8 }}>
-          This demo runs a simulation. The real integration connects to your hospital EHR
-          via FHIR R4 and returns live results inside your clinicians' existing workflow.
+        <p style={{ color:T.textMid, fontSize:14, maxWidth:520, margin:"0 auto 24px", lineHeight:1.8 }}>
+          This embedded prototype mirrors a fuller clinical workflow. The production integration still connects via FHIR R4
+          and returns results inside your clinicians&apos; existing environment.
         </p>
         <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
           <button className="btn-primary" onClick={() => setPage("Contact")}>Request a pilot →</button>
@@ -1281,12 +947,12 @@ const TeamPage = () => (
     <Section>
       <div className="grid-3" style={{ marginBottom:40 }}>
         {[
-          ["Founder / CEO","Health Data Science & Bioinformatics MSc. Background in software engineering and ML. Led the original HerNextBeat research concept and architecture.","CEO · Strategy · Fundraising"],
-          ["Chief Medical Officer","Cardiologist, 15 years ED experience. Led women's cardiac health research at Hospital Clínic Barcelona. Clinical validation lead.","CMO · Clinical validation · KOL"],
-          ["Head of ML Engineering","PhD Applied ML. Former researcher on the MIMIC-IV dataset team. Leads model architecture, SHAP pipeline, and drift monitoring system.","CTO · Model · Infrastructure"],
-          ["Regulatory Affairs","Specialist in EU MDR and FDA SaMD. Led CE mark submission for two Class IIa devices. Owns the 510(k) filing.","Regulatory · Compliance · Legal"],
-          ["Clinical Advisor","Professor of Cardiology, University of Barcelona. Co-author on 40+ peer-reviewed cardiovascular papers. Scientific board.","Advisor · Scientific board"],
-          ["Strategic Advisor","Former VP Digital Health at Philips Healthtech. Deep hospital C-suite network in Spain, Germany, and the UK.","Advisor · Business development"],
+          ["Rajae El Gaouzi • Founder / CEO","Health Data Science & Bioinformatics MSc. Background in software engineering and ML. Led the original HerNextBeat research concept and architecture.","CEO · Strategy · Fundraising"],
+          ["Clara Gonzalez • Chief Medical Officer (CMO)","Cardiologist, 15 years ED experience. Led women's cardiac health research at Hospital Clínic Barcelona. Clinical validation lead.","CMO · Clinical validation · KOL"],
+          ["Marco Russo • Chief Financial Officer (CFO)","Former VP Digital Health at Philips Healthtech. Deep hospital C-suite network in Spain, Germany, and the UK.","CFO · Finance · Strategy"],
+          ["Iván Peréz López • Chief Technology Officer (CTO)","PhD Applied ML. Former researcher on the MIMIC-IV dataset team. Leads model architecture, SHAP pipeline, and drift monitoring system.","CTO · Model · Infrastructure"],
+          ["Victor Gutierrez Gonzalez • Regulatory Affairs and Quality Assurance (QA) Manager","Specialist in EU MDR and FDA SaMD. Led CE mark submission for two Class IIa devices. Owns the 510(k) filing.","Regulatory · Compliance · Legal"],
+          ["Marta Meroño Rafel • Operation and Marketing Officer (OMO)","Former VP Digital Health at Philips Healthtech. Deep hospital C-suite network in Spain, Germany, and the UK.","OMO · Business development"],
         ].map(([role,bio,tags]) => (
           <div key={role} className="card">
             <div style={{ width:42, height:42, borderRadius:"50%",

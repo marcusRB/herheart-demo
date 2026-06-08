@@ -1,0 +1,732 @@
+
+<h2 class="sr-only">HerHeart AI — full 5-tab EHR clinical demo showing triage scoring, patient history, active orders, clinical notes and imaging review for a simulated female cardiac patient</h2>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:13px;background:transparent}
+.ehr{border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary)}
+.ehr-top{background:#0D1F3C;display:flex;align-items:center;justify-content:space-between;padding:7px 14px}
+.ehr-logo{font-size:13px;font-weight:500;color:#fff;letter-spacing:.02em;display:flex;align-items:center;gap:7px}
+.ehr-logo .dot-g{width:7px;height:7px;border-radius:50%;background:#4CAF7D;animation:pulse 2s ease infinite}
+.ehr-meta{font-size:11px;color:rgba(255,255,255,.38);display:flex;gap:14px;align-items:center}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ehr-tabs{background:#0F2444;display:flex;border-bottom:1px solid #1E3A5F;padding:0 14px}
+.etab{padding:9px 15px;font-size:12px;font-weight:400;color:rgba(255,255,255,.4);border-bottom:2px solid transparent;cursor:pointer;display:flex;align-items:center;gap:6px;transition:color .15s;white-space:nowrap}
+.etab:hover{color:rgba(255,255,255,.7)}
+.etab.on{color:#fff;font-weight:500;border-bottom-color:#1BA3B0}
+.etab .badge{background:rgba(27,163,176,.25);color:#7FD8E0;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:2px}
+.pt-bar{background:#0A1E12;border-bottom:1px solid #153020;padding:7px 14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.pt-name{font-size:12px;font-weight:600;color:#90D4A8}
+.pt-sub{font-size:11px;color:rgba(144,212,168,.48)}
+.pt-tag{margin-left:auto;padding:2px 9px;border-radius:4px;font-size:10px;font-weight:600}
+.panel{padding:14px;animation:fadein .3s ease both;display:none;background:var(--color-background-tertiary)}
+.panel.on{display:block}
+.section-hd{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-secondary);margin-bottom:8px;padding-bottom:5px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.fg{display:flex;flex-direction:column;gap:3px;margin-bottom:0}
+.fg label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-secondary)}
+.fg input,.fg select{font-size:12px;padding:4px 8px;border-radius:5px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);height:27px;outline:none;font-family:var(--font-sans)}
+.fg input:focus,.fg select:focus{border-color:var(--color-border-info)}
+.tog{padding:3px 9px;border-radius:4px;border:0.5px solid var(--color-border-secondary);font-size:11px;color:var(--color-text-secondary);cursor:pointer;background:var(--color-background-secondary);transition:all .15s}
+.tog.on{border-color:#0E7C86;background:rgba(14,124,134,.1);color:#0E7C86;font-weight:500}
+.score-btn{width:100%;padding:8px;border-radius:6px;border:none;background:#0D1F3C;color:#fff;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .2s}
+.score-btn:hover{background:#1A3560}
+.score-btn:disabled{opacity:.4;cursor:not-allowed}
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite}
+.risk-box{border-radius:8px;padding:12px;text-align:center;border:0.5px solid}
+.muted{color:var(--color-text-secondary);font-size:12px;line-height:1.7}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px}
+.row-sep{border-bottom:0.5px solid var(--color-border-tertiary);padding-bottom:8px;margin-bottom:8px}
+.teal{color:#0E7C86}
+.rose{color:#B5446E}
+.amber{color:#B06E00}
+.danger{color:#C0392B}
+.success{color:#1A7A4A}
+.pill{display:inline-flex;align-items:center;font-size:10px;font-weight:500;padding:2px 7px;border-radius:3px}
+.pill-r{background:#FAEEF3;color:#B5446E}
+.pill-g{background:#E8F6EE;color:#1A7A4A}
+.pill-a{background:#FFF4E0;color:#B06E00}
+.pill-d{background:#FDEDEC;color:#C0392B}
+.pill-t{background:#E0F4F6;color:#0E7C86}
+.pill-n{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.api-bar{border-top:0.5px solid var(--color-border-tertiary);padding:7px 14px;font-family:var(--font-mono);font-size:10px;color:var(--color-text-secondary);display:flex;gap:16px;flex-wrap:wrap;background:var(--color-background-secondary)}
+</style>
+
+<div class="ehr">
+
+<div class="ehr-top">
+  <div class="ehr-logo">
+    <span class="dot-g" aria-hidden="true"></span>
+    HerHeart EHR Integration — Clinical Demo
+  </div>
+  <div class="ehr-meta">
+    <span><i class="ti ti-shield-check" aria-hidden="true"></i> FHIR R4 connected</span>
+    <span><i class="ti ti-lock" aria-hidden="true"></i> HIPAA session</span>
+    <span>Dr. A. Martínez · ED Attending</span>
+  </div>
+</div>
+
+<div class="ehr-tabs">
+  <div class="etab on" onclick="switchTab('triage',this)"><i class="ti ti-activity" aria-hidden="true"></i>Triage <span class="badge">AI</span></div>
+  <div class="etab" onclick="switchTab('history',this)"><i class="ti ti-clipboard-list" aria-hidden="true"></i>Patient history</div>
+  <div class="etab" onclick="switchTab('orders',this)"><i class="ti ti-checklist" aria-hidden="true"></i>Orders <span class="badge" id="orders-count">3</span></div>
+  <div class="etab" onclick="switchTab('notes',this)"><i class="ti ti-notes" aria-hidden="true"></i>Notes</div>
+  <div class="etab" onclick="switchTab('imaging',this)"><i class="ti ti-scan" aria-hidden="true"></i>Imaging</div>
+</div>
+
+<div class="pt-bar">
+  <div>
+    <span class="pt-name">García López, María &nbsp;·&nbsp; F &nbsp;·&nbsp; 58 y &nbsp;·&nbsp; MRN 00429-A</span>
+    <span class="pt-sub"> &nbsp;·&nbsp; ED arrival 14:32 &nbsp;·&nbsp; Chest tightness, dyspnoea, nausea &nbsp;·&nbsp; Nurse: L. Ruiz</span>
+  </div>
+  <div id="pt-risk-tag" class="pt-tag" style="background:rgba(255,255,255,.07);color:rgba(255,255,255,.3);border:0.5px solid rgba(255,255,255,.12)">Not scored</div>
+</div>
+
+<!-- ═══════════ TAB 1: TRIAGE ═══════════ -->
+<div class="panel on" id="tab-triage">
+  <div style="display:grid;grid-template-columns:1fr 1fr 260px;gap:12px">
+
+    <div>
+      <div class="section-hd"><i class="ti ti-activity" aria-hidden="true" style="margin-right:4px"></i>Vital signs &amp; presentation</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:9px">
+        <div class="fg"><label>Systolic BP</label><input type="number" id="f-sbp" value="148" min="60" max="250"></div>
+        <div class="fg"><label>Heart rate</label><input type="number" id="f-hr" value="96" min="30" max="200"></div>
+        <div class="fg"><label>SpO₂ %</label><input type="number" id="f-spo2" value="97" min="70" max="100"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px">
+        <div class="fg"><label>Pain onset</label>
+          <select id="f-onset"><option value="acute">&lt;1 hour</option><option value="sub" selected>1–6 hours</option><option value="chronic">&gt;6 hours</option></select>
+        </div>
+        <div class="fg"><label>Pain 0–10</label><input type="number" id="f-pain" value="6" min="0" max="10"></div>
+      </div>
+      <div class="section-hd" style="margin-top:8px"><i class="ti ti-flask" aria-hidden="true" style="margin-right:4px"></i>Labs</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:9px">
+        <div class="fg"><label>Troponin I ng/L</label><input type="number" id="f-trop" value="38" min="0" max="5000"></div>
+        <div class="fg"><label>Cholesterol</label><input type="number" id="f-chol" value="224" min="100" max="400"></div>
+        <div class="fg"><label>Glucose</label><input type="number" id="f-gluc" value="118" min="60" max="500"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-hd" style="color:#B5446E"><i class="ti ti-dna" aria-hidden="true" style="margin-right:4px"></i>Female-specific history <span style="color:#0E7C86;font-size:9px;background:rgba(14,124,134,.1);padding:1px 6px;border-radius:3px;margin-left:4px;border:0.5px solid rgba(14,124,134,.3)">FHIR auto-pull</span></div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px" id="ftogs">
+        <button class="tog on" data-k="preeclampsia" onclick="togF(this)">Preeclampsia hx</button>
+        <button class="tog" data-k="gest_dm" onclick="togF(this)">Gestational DM</button>
+        <button class="tog on" data-k="early_meno" onclick="togF(this)">Early menopause</button>
+        <button class="tog" data-k="hrt" onclick="togF(this)">HRT use</button>
+        <button class="tog" data-k="pcos" onclick="togF(this)">PCOS</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px">
+        <div class="fg"><label>Menopause age</label><input type="number" id="f-meno" value="43" min="35" max="65"></div>
+        <div class="fg"><label>Pregnancies</label><input type="number" id="f-preg" value="2" min="0" max="15"></div>
+      </div>
+      <div class="section-hd" style="margin-top:8px"><i class="ti ti-heart" aria-hidden="true" style="margin-right:4px"></i>Medical history</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px" id="htogs">
+        <button class="tog on" data-k="htn" onclick="togF(this)">Hypertension</button>
+        <button class="tog on" data-k="dyslip" onclick="togF(this)">Dyslipidaemia</button>
+        <button class="tog" data-k="dm2" onclick="togF(this)">T2 DM</button>
+        <button class="tog" data-k="smoking" onclick="togF(this)">Smoking</button>
+        <button class="tog" data-k="family_cvd" onclick="togF(this)">Family CVD</button>
+        <button class="tog" data-k="prior_cvd" onclick="togF(this)">Prior CVD event</button>
+      </div>
+      <div style="margin-bottom:9px">
+        <div class="section-hd" style="margin-top:2px">Scenario presets</div>
+        <div style="display:flex;gap:5px">
+          <button class="tog" onclick="loadPreset('high')">High risk</button>
+          <button class="tog on" onclick="loadPreset('medium')">Intermediate</button>
+          <button class="tog" onclick="loadPreset('low')">Low risk</button>
+        </div>
+      </div>
+      <button class="score-btn" id="score-btn" onclick="runScore()">
+        <i class="ti ti-cpu" aria-hidden="true"></i> Run HerHeart risk score
+      </button>
+    </div>
+
+    <div id="result-col">
+      <div class="section-hd"><i class="ti ti-brain" aria-hidden="true" style="margin-right:4px"></i>AI output · v2.4.1</div>
+      <div id="result-idle" style="text-align:center;padding:28px 8px;color:var(--color-text-secondary);font-size:12px">
+        <i class="ti ti-heart-rate-monitor" aria-hidden="true" style="font-size:28px;display:block;margin-bottom:8px;opacity:.4"></i>
+        Fill data and run score
+      </div>
+      <div id="result-out" style="display:none"></div>
+    </div>
+
+  </div>
+  <div id="api-log" style="display:none" class="api-bar">
+    <span class="teal">POST /v1/score</span>
+    <span class="success">200 OK</span>
+    <span id="log-lat"></span>
+    <span>model: xgb-female-v2.4.1</span>
+    <span id="log-audit"></span>
+    <span>drift: nominal</span>
+  </div>
+</div>
+
+<!-- ═══════════ TAB 2: PATIENT HISTORY ═══════════ -->
+<div class="panel" id="tab-history">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+    <div>
+      <div class="section-hd"><i class="ti ti-user" aria-hidden="true" style="margin-right:4px"></i>Demographics &amp; GP record</div>
+      <div class="card" style="margin-bottom:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:12px">
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Full name</div><div style="color:var(--color-text-primary);font-weight:500">García López, María</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">DOB</div><div style="color:var(--color-text-primary);font-weight:500">12 Apr 1967 (58 y)</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">GP</div><div style="color:var(--color-text-primary);font-weight:500">Dr. F. Torres — CAP Les Corts</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Insurance</div><div style="color:var(--color-text-primary);font-weight:500">CatSalut / Servei Català de la Salut</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Allergies</div><div style="color:var(--color-text-primary);font-weight:500">Penicillin — urticaria</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Blood type</div><div style="color:var(--color-text-primary);font-weight:500">A+</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Height</div><div style="color:var(--color-text-primary);font-weight:500">162 cm</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Weight</div><div style="color:var(--color-text-primary);font-weight:500">71 kg (BMI 27.1)</div></div>
+        </div>
+      </div>
+
+      <div class="section-hd"><i class="ti ti-dna" aria-hidden="true" style="margin-right:4px;color:#B5446E"></i>Obstetric &amp; gynaecological history <span style="font-size:9px;color:#0E7C86;background:rgba(14,124,134,.1);padding:1px 6px;border-radius:3px;border:0.5px solid rgba(14,124,134,.3)">FHIR R4 retrieved</span></div>
+      <div class="card" style="margin-bottom:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:12px">
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Pregnancies</div><div style="color:var(--color-text-primary);font-weight:500">G2 P2 A0</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Deliveries</div><div style="color:var(--color-text-primary);font-weight:500">2 × spontaneous vaginal</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Preeclampsia</div><div style="color:var(--color-text-primary);font-weight:500">Yes — 2nd pregnancy (2001) ⚠</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Gestational DM</div><div style="color:var(--color-text-primary);font-weight:500">No</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Menopause age</div><div style="color:var(--color-text-primary);font-weight:500">43 years (2010) — early</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Menopause type</div><div style="color:var(--color-text-primary);font-weight:500">Spontaneous</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">HRT</div><div style="color:var(--color-text-primary);font-weight:500">No</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Last mammo</div><div style="color:var(--color-text-primary);font-weight:500">2023 — normal</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Last Pap smear</div><div style="color:var(--color-text-primary);font-weight:500">2022 — normal</div></div>
+          <div><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:1px">Gynaecologist</div><div style="color:var(--color-text-primary);font-weight:500">Dr. C. Vidal, HCB</div></div>
+        </div>
+        <div style="margin-top:10px;padding:7px 9px;background:rgba(181,68,110,.07);border:0.5px solid rgba(181,68,110,.25);border-radius:5px;font-size:11px;color:#B5446E">
+          <i class="ti ti-alert-triangle" aria-hidden="true" style="margin-right:4px"></i>
+          Preeclampsia hx + early menopause = elevated lifetime CVD risk. HerHeart female-specific features activated.
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-hd"><i class="ti ti-clipboard-list" aria-hidden="true" style="margin-right:4px"></i>Active diagnoses</div>
+      <div class="card" style="margin-bottom:10px">
+        <div class="row-sep" style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div><div style="font-size:12px;font-weight:500;color:var(--color-text-primary)">Essential hypertension</div><div style="font-size:10px;color:var(--color-text-secondary)">ICD-10 I10 · since 2015</div></div><div style="text-align:right;flex-shrink:0"><div class="pill pill-a" style="margin-bottom:3px">Controlled — ramipril 5mg</div></div></div>
+        <div class="row-sep" style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div><div style="font-size:12px;font-weight:500;color:var(--color-text-primary)">Hyperlipidaemia</div><div style="font-size:10px;color:var(--color-text-secondary)">ICD-10 E78.5 · since 2018</div></div><div style="text-align:right;flex-shrink:0"><div class="pill pill-g" style="margin-bottom:3px">Controlled — atorvastatin 20mg</div></div></div>
+        <div class="row-sep" style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div><div style="font-size:12px;font-weight:500;color:var(--color-text-primary)">Hypothyroidism</div><div style="font-size:10px;color:var(--color-text-secondary)">ICD-10 E03.9 · since 2020</div></div><div style="text-align:right;flex-shrink:0"><div class="pill pill-g" style="margin-bottom:3px">Controlled — levothyroxine 75μg</div></div></div>
+        <div class="row-sep" style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div><div style="font-size:12px;font-weight:500;color:var(--color-text-primary)">Menopausal syndrome</div><div style="font-size:10px;color:var(--color-text-secondary)">ICD-10 N95.1 · since 2010</div></div><div style="text-align:right;flex-shrink:0"><div class="pill pill-n" style="margin-bottom:3px">Resolved</div></div></div>
+      </div>
+
+      <div class="section-hd"><i class="ti ti-pill" aria-hidden="true" style="margin-right:4px"></i>Current medications</div>
+      <div class="card" style="margin-bottom:10px">
+        <div class="row-sep" style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:12px;font-weight:500">Ramipril 5 mg</div><div style="font-size:10px;color:var(--color-text-secondary)">Once daily (morning) · ACE inhibitor</div></div><span class="pill pill-t">5 mg</span></div>
+        <div class="row-sep" style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:12px;font-weight:500">Atorvastatin 20 mg</div><div style="font-size:10px;color:var(--color-text-secondary)">Once daily (evening) · Statin</div></div><span class="pill pill-t">20 mg</span></div>
+        <div class="row-sep" style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:12px;font-weight:500">Levothyroxine 75 μg</div><div style="font-size:10px;color:var(--color-text-secondary)">Once daily fasting · Thyroid hormone</div></div><span class="pill pill-t">75 μg</span></div>
+        <div class="row-sep" style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:12px;font-weight:500">Aspirin 100 mg</div><div style="font-size:10px;color:var(--color-text-secondary)">Once daily · Antiplatelet (self-prescribed)</div></div><span class="pill pill-t">100 mg</span></div>
+      </div>
+
+      <div class="section-hd"><i class="ti ti-clock-history" aria-hidden="true" style="margin-right:4px"></i>Recent encounters</div>
+      <div class="card">
+        <div class="row-sep"><div style="display:flex;gap:8px;align-items:baseline;margin-bottom:2px"><span style="font-size:11px;font-weight:500;color:var(--color-text-primary)">15 Jan 2026</span><span class="pill pill-n">GP</span></div><div style="font-size:11px;color:var(--color-text-secondary)">Annual review — BP well controlled, HbA1c 5.6%, statin dose maintained</div></div>
+        <div class="row-sep"><div style="display:flex;gap:8px;align-items:baseline;margin-bottom:2px"><span style="font-size:11px;font-weight:500;color:var(--color-text-primary)">08 Nov 2025</span><span class="pill pill-n">Cardiology</span></div><div style="font-size:11px;color:var(--color-text-secondary)">Routine ECG — normal sinus rhythm, no acute changes</div></div>
+        <div class="row-sep"><div style="display:flex;gap:8px;align-items:baseline;margin-bottom:2px"><span style="font-size:11px;font-weight:500;color:var(--color-text-primary)">22 Jun 2025</span><span class="pill pill-n">Emergency</span></div><div style="font-size:11px;color:var(--color-text-secondary)">Palpitations — resolved. Holter 24h normal. Discharged</div></div>
+        <div class="row-sep"><div style="display:flex;gap:8px;align-items:baseline;margin-bottom:2px"><span style="font-size:11px;font-weight:500;color:var(--color-text-primary)">14 Mar 2025</span><span class="pill pill-n">GP</span></div><div style="font-size:11px;color:var(--color-text-secondary)">Thyroid function — TSH 2.1, T4 normal. Levothyroxine maintained</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════ TAB 3: ORDERS ═══════════ -->
+<div class="panel" id="tab-orders">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+    <div>
+      <div class="section-hd"><i class="ti ti-checklist" aria-hidden="true" style="margin-right:4px"></i>Active orders <span id="active-count" class="pill pill-t" style="margin-left:6px">3 active</span></div>
+      <div id="orders-list">
+        <div class="card row-sep" id="o1" style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+            <div>
+              <span style="font-size:12px;font-weight:500;color:var(--color-text-primary)">12-lead ECG</span>
+              <span class="pill pill-d" style="margin-left:6px">STAT</span>
+            </div>
+            <span class="pill pill-g">Completed</span>
+          </div>
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">14:38 · Lab · ordered by L. Ruiz RN</div>
+          <div style="font-size:11px;color:var(--color-text-primary);font-style:normal">Sinus tachycardia HR 96. Non-specific ST changes V4-V6. No LBBB.</div>
+        </div>
+        <div class="card row-sep" id="o2" style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+            <div>
+              <span style="font-size:12px;font-weight:500;color:var(--color-text-primary)">Troponin I (0h)</span>
+              <span class="pill pill-d" style="margin-left:6px">STAT</span>
+            </div>
+            <span class="pill pill-g">Resulted</span>
+          </div>
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">14:40 · Lab · ordered by Lab auto</div>
+          <div style="font-size:11px;color:var(--color-text-primary);font-style:normal">38 ng/L (ref &lt;14 ng/L) ⚠ Elevated</div>
+        </div>
+        <div class="card row-sep" id="o3" style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+            <div>
+              <span style="font-size:12px;font-weight:500;color:var(--color-text-primary)">CBC, BMP, Lipid panel</span>
+              <span class="pill pill-n" style="margin-left:6px">Routine</span>
+            </div>
+            <span class="pill pill-a">Pending</span>
+          </div>
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px">14:42 · Lab · ordered by Dr. Martínez</div>
+          <div style="font-size:11px;color:var(--color-text-secondary);font-style:italic">Awaiting result</div>
+        </div>
+      </div>
+
+      <div class="section-hd" style="margin-top:4px"><i class="ti ti-plus" aria-hidden="true" style="margin-right:4px"></i>Add new order</div>
+      <div class="card">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px">
+          <div class="fg"><label>Order type</label>
+            <select id="new-order-type">
+              <option>Lab — Troponin serial (1h)</option>
+              <option>Lab — BNP</option>
+              <option>Lab — D-dimer</option>
+              <option>Imaging — Chest X-ray PA</option>
+              <option>Imaging — Echo TTE</option>
+              <option>Consult — Cardiology STAT</option>
+              <option>Medication — Aspirin 300mg PO</option>
+              <option>Medication — GTN 400μg SL PRN</option>
+              <option>IV — Access + 0.9% NaCl TKO</option>
+            </select>
+          </div>
+          <div class="fg"><label>Priority</label>
+            <select id="new-order-priority"><option>STAT</option><option>Urgent</option><option>Routine</option></select>
+          </div>
+        </div>
+        <button class="score-btn" onclick="addOrder()" style="background:#0E7C86">
+          <i class="ti ti-plus" aria-hidden="true"></i> Place order
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-hd"><i class="ti ti-robot" aria-hidden="true" style="margin-right:4px;color:#0E7C86"></i>HerHeart recommended pathway</div>
+      <div id="ai-orders-panel">
+        <div class="card" style="background:rgba(14,124,134,.05);border-color:rgba(14,124,134,.25);margin-bottom:10px">
+          <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px">Run the triage score first to generate AI-recommended orders for this patient.</div>
+          <button class="score-btn" onclick="switchTab('triage',document.querySelector('.etab'))" style="background:rgba(14,124,134,.15);color:#0E7C86;border:0.5px solid rgba(14,124,134,.3)">
+            <i class="ti ti-arrow-left" aria-hidden="true"></i> Go to triage tab
+          </button>
+        </div>
+      </div>
+
+      <div class="section-hd" style="margin-top:4px"><i class="ti ti-history" aria-hidden="true" style="margin-right:4px"></i>Order history (last 30 days)</div>
+      <div class="card">
+        <div class="row-sep"><div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="font-size:11px;font-weight:500">15 Jan 2026 · GP</span><span class="pill pill-g">Completed</span></div><div style="font-size:11px;color:var(--color-text-secondary)">HbA1c, Lipid panel, TSH</div></div>
+        <div class="row-sep"><div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="font-size:11px;font-weight:500">08 Nov 2025 · Cardiology</span><span class="pill pill-g">Completed</span></div><div style="font-size:11px;color:var(--color-text-secondary)">12-lead ECG, Echo TTE</div></div>
+        <div class="row-sep"><div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="font-size:11px;font-weight:500">22 Jun 2025 · ED</span><span class="pill pill-g">Completed — negative</span></div><div style="font-size:11px;color:var(--color-text-secondary)">Troponin ×3, ECG, CXR</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════ TAB 4: NOTES ═══════════ -->
+<div class="panel" id="tab-notes">
+  <div style="display:grid;grid-template-columns:200px 1fr;gap:12px">
+
+    <div>
+      <div class="section-hd">Note index</div>
+      <div id="note-list">
+        <div onclick="selectNote('n1',this)" id="nl-n1" style="padding:8px 10px;border-radius:6px;cursor:pointer;border:0.5px solid var(--color-border-info);background:var(--color-background-info);margin-bottom:4px;transition:all .15s">
+          <div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">ED Triage note</div>
+          <div style="font-size:10px;color:var(--color-text-secondary)">14:36 · L. Ruiz RN</div>
+        </div>
+        <div onclick="selectNote('n2',this)" id="nl-n2" style="padding:8px 10px;border-radius:6px;cursor:pointer;border:0.5px solid transparent;background:transparent;margin-bottom:4px;transition:all .15s">
+          <div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">ED attending note</div>
+          <div style="font-size:10px;color:var(--color-text-secondary)">14:48 · Dr. A. Martínez</div>
+        </div>
+        <div onclick="selectNote('n3',this)" id="nl-n3" style="padding:8px 10px;border-radius:6px;cursor:pointer;border:0.5px solid transparent;background:transparent;margin-bottom:4px;transition:all .15s">
+          <div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">HerHeart AI summary</div>
+          <div style="font-size:10px;color:var(--color-text-secondary)">— · AI · pending score</div>
+        </div>
+        <div onclick="selectNote('n4',this)" id="nl-n4" style="padding:8px 10px;border-radius:6px;cursor:pointer;border:0.5px solid transparent;background:transparent;margin-bottom:4px;transition:all .15s">
+          <div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">Cardiology consult</div>
+          <div style="font-size:10px;color:var(--color-text-secondary)">2025-11-08 · Dr. R. Puig</div>
+        </div>
+        <div onclick="selectNote('n5',this)" id="nl-n5" style="padding:8px 10px;border-radius:6px;cursor:pointer;border:0.5px solid transparent;background:transparent;margin-bottom:4px;transition:all .15s">
+          <div style="font-size:11px;font-weight:500;color:var(--color-text-primary)">GP discharge note</div>
+          <div style="font-size:10px;color:var(--color-text-secondary)">2026-01-15 · Dr. F. Torres</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div id="note-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">ED Triage note</div>
+            <div style="font-size:11px;color:var(--color-text-secondary)">14:36 · L. Ruiz RN · ED, Hospital Clínic de Barcelona</div>
+          </div>
+          <span class="pill pill-g">Signed</span>
+        </div>
+        <div class="card" style="font-size:12px;line-height:1.8;color:var(--color-text-primary)">
+          <p style="margin-bottom:8px"><strong>Chief complaint:</strong> 58-year-old woman presenting with central chest tightness radiating to the left arm, associated dyspnoea and mild nausea. Symptoms began approximately 2 hours prior to arrival. Denies syncope or diaphoresis.</p>
+          <p style="margin-bottom:8px"><strong>Vitals on arrival:</strong> BP 148/92 mmHg, HR 96 bpm, SpO₂ 97% on room air, RR 18/min, Temp 36.7°C, Pain 6/10 (NRS).</p>
+          <p style="margin-bottom:8px"><strong>FHIR auto-retrieved history:</strong> Known hypertension (controlled, ramipril 5mg), hyperlipidaemia (atorvastatin 20mg), early menopause age 43, history of preeclampsia in second pregnancy (2001). No prior documented cardiac events.</p>
+          <p style="margin-bottom:8px"><strong>ECG:</strong> Sinus tachycardia. Non-specific ST changes in V4-V6. No ST elevation. No LBBB.</p>
+          <p style="margin-bottom:8px"><strong>Initial troponin I:</strong> 38 ng/L (reference &lt;14 ng/L). Elevated. Serial troponin ordered.</p>
+          <p style="margin-bottom:0"><strong>Action:</strong> Patient triaged as Category 2 (urgent). IV access established. HerHeart AI triage score pending. Attending notified.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════ TAB 5: IMAGING ═══════════ -->
+<div class="panel" id="tab-imaging">
+  <div style="display:grid;grid-template-columns:200px 1fr;gap:12px">
+
+    <div>
+      <div class="section-hd">Imaging studies</div>
+      <div onclick="selectImg('i1',this)" id="il-i1" style="padding:8px 10px;border-radius:6px;cursor:pointer;border:0.5px solid var(--color-border-info);background:var(--color-background-info);margin-bottom:4px;transition:all .15s">
+        <div style="font-size:11px;font-weight:500">CXR PA</div>
+        <div style="font-size:10px;color:var(--color-text-secondary)">Today 14:51</div>
+        <span class="pill pill-a" style="margin-top:3px">Preliminary</span>
+      </div>
+      <div onclick="selectImg('i2',this)" id="il-i2" style="padding:8px 10px;border-radius:6px;cursor:pointer;border:0.5px solid transparent;background:transparent;margin-bottom:4px;transition:all .15s">
+        <div style="font-size:11px;font-weight:500">Echo TTE</div>
+        <div style="font-size:10px;color:var(--color-text-secondary)">2025-11-08</div>
+        <span class="pill pill-g" style="margin-top:3px">Final</span>
+      </div>
+      <div onclick="selectImg('i3',this)" id="il-i3" style="padding:8px 10px;border-radius:6px;cursor:pointer;border:0.5px solid transparent;background:transparent;margin-bottom:4px;transition:all .15s">
+        <div style="font-size:11px;font-weight:500">Holter 24h</div>
+        <div style="font-size:10px;color:var(--color-text-secondary)">2025-06-22</div>
+        <span class="pill pill-g" style="margin-top:3px">Final</span>
+      </div>
+      <div onclick="selectImg('i4',this)" id="il-i4" style="padding:8px 10px;border-radius:6px;cursor:pointer;border:0.5px solid transparent;background:transparent;margin-bottom:4px;transition:all .15s">
+        <div style="font-size:11px;font-weight:500">CXR PA</div>
+        <div style="font-size:10px;color:var(--color-text-secondary)">2025-06-22</div>
+        <span class="pill pill-g" style="margin-top:3px">Final</span>
+      </div>
+    </div>
+
+    <div id="img-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div>
+          <div style="font-size:13px;font-weight:500">Chest X-ray PA — today 14:51</div>
+          <div style="font-size:11px;color:var(--color-text-secondary)">Radiology · Hospital Clínic de Barcelona · Dr. M. Soler (preliminary read)</div>
+        </div>
+        <span class="pill pill-a">Preliminary</span>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">
+            <svg width="100%" viewBox="0 0 260 200" aria-label="Simulated chest X-ray showing cardiac silhouette and lung fields" role="img">
+              <title>Chest X-ray simulation</title>
+              <rect width="260" height="200" fill="#111820"/>
+              <ellipse cx="130" cy="160" rx="115" ry="55" fill="#1E2830" opacity=".9"/>
+              <ellipse cx="130" cy="170" rx="105" ry="40" fill="#252F38"/>
+              <rect x="60" y="30" width="55" height="120" rx="20" fill="#1A2430" opacity=".85"/>
+              <rect x="145" y="30" width="55" height="120" rx="20" fill="#1A2430" opacity=".85"/>
+              <ellipse cx="118" cy="110" rx="30" ry="45" fill="#0D1820" opacity=".7"/>
+              <ellipse cx="142" cy="112" rx="30" ry="47" fill="#0D1820" opacity=".7"/>
+              <path d="M 100 45 Q 90 55 88 70 Q 86 85 90 95" stroke="#2A3A48" stroke-width="1.5" fill="none"/>
+              <path d="M 160 45 Q 170 55 172 70 Q 174 85 170 95" stroke="#2A3A48" stroke-width="1.5" fill="none"/>
+              <ellipse cx="127" cy="115" rx="24" ry="38" fill="#1C2A38"/>
+              <path d="M 115 95 Q 112 110 114 125 Q 116 138 124 142 Q 132 146 138 138 Q 144 128 142 115 Q 140 100 135 93 Q 128 87 122 93 Z" fill="#243040" stroke="#2E3E50" stroke-width=".5"/>
+              <path d="M 88 62 L 96 65 M 90 72 L 100 74 M 88 82 L 97 83" stroke="#2E404E" stroke-width="1" opacity=".6"/>
+              <path d="M 172 62 L 164 65 M 170 72 L 160 74 M 172 82 L 163 83" stroke="#2E404E" stroke-width="1" opacity=".6"/>
+              <text x="8" y="192" font-size="8" fill="rgba(255,255,255,.25)" font-family="monospace">PA 14:51 · HCB · 00429-A</text>
+              <text x="180" y="16" font-size="7" fill="rgba(255,255,255,.22)" font-family="monospace">PRELIM</text>
+            </svg>
+            <div style="padding:7px 10px;background:#0D1820;display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:10px;color:rgba(255,255,255,.35);font-family:monospace">PA · 14:51 · HCB</span>
+              <div style="display:flex;gap:8px">
+                <button style="font-size:10px;color:rgba(255,255,255,.45);background:none;border:none;cursor:pointer"><i class="ti ti-zoom-in" aria-hidden="true"></i></button>
+                <button style="font-size:10px;color:rgba(255,255,255,.45);background:none;border:none;cursor:pointer"><i class="ti ti-adjustments" aria-hidden="true"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-hd">Preliminary radiology read</div>
+          <div class="card" style="font-size:12px;line-height:1.8;margin-bottom:10px">
+            <p style="margin-bottom:6px"><strong>Cardiomediastinal silhouette:</strong> Mildly enlarged. CTR estimated 0.52 (borderline). Aortic knuckle prominent. No acute widening of mediastinum.</p>
+            <p style="margin-bottom:6px"><strong>Lung fields:</strong> No focal consolidation. No pneumothorax. Mild vascular redistribution to upper lobes — early pulmonary venous hypertension cannot be excluded. No frank pulmonary oedema.</p>
+            <p style="margin-bottom:6px"><strong>Pleura:</strong> No effusion identified on this projection.</p>
+            <p style="margin-bottom:0"><strong>Bones &amp; soft tissues:</strong> Unremarkable. Mild T-spine degenerative changes.</p>
+          </div>
+          <div style="padding:8px 10px;background:rgba(176,110,0,.07);border:0.5px solid rgba(176,110,0,.3);border-radius:6px;font-size:11px;color:#B06E00;margin-bottom:8px">
+            <i class="ti ti-alert-triangle" aria-hidden="true" style="margin-right:4px"></i>
+            Borderline CTR + possible early upper lobe diversion. Correlate with clinical and troponin trend. Echo TTE recommended.
+          </div>
+          <div class="section-hd" style="margin-top:4px">Prior imaging comparison</div>
+          <div class="card" style="font-size:11px;color:var(--color-text-secondary)">
+            <div class="row-sep"><strong style="color:var(--color-text-primary)">Echo TTE · Nov 2025:</strong> EF 58% (normal). Mild diastolic dysfunction (Grade I). No RWMA. Aortic valve normal. No significant MR or TR.</div>
+            <div><strong style="color:var(--color-text-primary)">CXR · Jun 2025:</strong> Normal heart size. Clear lung fields. No acute findings. Normal CTR 0.46.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+
+<script>
+const AF = new Set(["preeclampsia","early_meno","htn","dyslip"]);
+
+const NOTE_CONTENTS = {
+  n1: {title:"ED Triage note", meta:"14:36 · L. Ruiz RN · ED, Hospital Clínic de Barcelona", status:"Signed", statuscls:"pill-g",
+    body:`<p style="margin-bottom:8px"><strong>Chief complaint:</strong> 58-year-old woman presenting with central chest tightness radiating to the left arm, associated dyspnoea and mild nausea. Symptoms began approximately 2 hours prior to arrival. Denies syncope or diaphoresis.</p><p style="margin-bottom:8px"><strong>Vitals on arrival:</strong> BP 148/92 mmHg, HR 96 bpm, SpO₂ 97% on room air, RR 18/min, Temp 36.7°C, Pain 6/10 (NRS).</p><p style="margin-bottom:8px"><strong>FHIR auto-retrieved history:</strong> Known hypertension (controlled, ramipril 5mg), hyperlipidaemia (atorvastatin 20mg), early menopause age 43, history of preeclampsia in second pregnancy (2001). No prior documented cardiac events.</p><p style="margin-bottom:8px"><strong>ECG:</strong> Sinus tachycardia. Non-specific ST changes in V4-V6. No ST elevation. No LBBB.</p><p style="margin-bottom:8px"><strong>Initial troponin I:</strong> 38 ng/L (reference &lt;14 ng/L). Elevated. Serial troponin ordered.</p><p style="margin-bottom:0"><strong>Action:</strong> Patient triaged as Category 2 (urgent). IV access established. HerHeart AI triage score pending. Attending notified.</p>`},
+  n2: {title:"ED attending note", meta:"14:48 · Dr. A. Martínez · ED Attending", status:"In progress", statuscls:"pill-a",
+    body:`<p style="margin-bottom:8px"><strong>Assessment:</strong> 58F with hypertension, early menopause, and preeclampsia history presenting with atypical chest pain and elevated troponin. ECG non-diagnostic. Presentation is consistent with NSTEMI versus type 2 MI in the context of demand ischaemia. Female-atypical presentation (nausea, jaw tightness, exertional component) must not be dismissed.</p><p style="margin-bottom:8px"><strong>HerHeart AI:</strong> Awaiting risk stratification score. Female-specific risk factors (preeclampsia, early menopause) auto-loaded from FHIR. Expected intermediate-to-high risk tier based on clinical picture.</p><p style="margin-bottom:8px"><strong>Plan:</strong> Serial troponin 0h/1h/3h. Cardiology consult requested. Continuous cardiac monitoring. Hold anticoagulation pending cardiology assessment. Repeat ECG at 30 minutes.</p><p style="margin-bottom:0"><strong>Disposition:</strong> Admit to monitored ED bay. Cardiology to review within 1 hour.</p>`},
+  n3: {title:"HerHeart AI summary", meta:"Generated automatically after score", status:"Pending score", statuscls:"pill-n",
+    body:`<div style="padding:16px;text-align:center;color:var(--color-text-secondary)"><i class="ti ti-brain" style="font-size:28px;display:block;margin-bottom:8px;opacity:.4"></i>Run the HerHeart risk score in the Triage tab to generate the AI clinical summary for this patient. The summary will include risk tier, SHAP feature explanation, and recommended care pathway.</div>`},
+  n4: {title:"Cardiology consult note", meta:"08 Nov 2025 · Dr. R. Puig · Cardiology", status:"Signed", statuscls:"pill-g",
+    body:`<p style="margin-bottom:8px"><strong>Referral reason:</strong> Palpitations, intermittent. Ruled out significant arrhythmia on 24h Holter. Routine echo and ECG.</p><p style="margin-bottom:8px"><strong>Echo TTE findings:</strong> EF 58% (preserved, normal range). Mild Grade I diastolic dysfunction consistent with age and hypertension. No regional wall motion abnormality. Aortic valve — tricuspid, not stenotic, trace regurgitation. Mitral valve — normal morphology, trace MR. No pericardial effusion.</p><p style="margin-bottom:8px"><strong>ECG:</strong> Normal sinus rhythm. PR 164ms, QRS 88ms, QTc 418ms. No repolarisation abnormality. No LVH criteria.</p><p style="margin-bottom:0"><strong>Recommendation:</strong> No structural or functional cardiac pathology identified at this assessment. Diastolic dysfunction grade I — optimise hypertension management. Annual cardiology review. Patient counselled re: elevated CVD risk secondary to early menopause and prior preeclampsia.</p>`},
+  n5: {title:"GP discharge note", meta:"15 Jan 2026 · Dr. F. Torres · CAP Les Corts", status:"Signed", statuscls:"pill-g",
+    body:`<p style="margin-bottom:8px"><strong>Annual review summary:</strong> Good general health. Cardiovascular risk factors managed — BP well-controlled on ramipril, LDL 2.4 mmol/L on atorvastatin 20mg. HbA1c 5.6% (non-diabetic range). Thyroid function normal on levothyroxine.</p><p style="margin-bottom:8px"><strong>CVD risk assessment (GP level):</strong> SCORE2 estimated 10-year CVD risk: 8% (high). Note: standard SCORE2 does not incorporate preeclampsia history or early menopause — actual risk may be underestimated. Patient advised regarding lifestyle, Mediterranean diet, physical activity.</p><p style="margin-bottom:8px"><strong>Screening up to date:</strong> Mammography 2023 normal. Pap smear 2022 normal. Colonoscopy 2021 normal.</p><p style="margin-bottom:0"><strong>Next steps:</strong> Annual bloods in January 2027. Cardiology follow-up November 2026. GP PRN. Patient advised to seek urgent care if chest symptoms recur.</p>`}
+};
+
+const IMG_CONTENTS = {
+  i1: {label:"Chest X-ray PA — today 14:51", meta:"Radiology · Hospital Clínic de Barcelona · Dr. M. Soler (preliminary read)", status:"Preliminary", statuscls:"pill-a"},
+  i2: {label:"Echocardiogram TTE — 08 Nov 2025", meta:"Cardiology · Hospital Clínic de Barcelona · Dr. R. Puig", status:"Final", statuscls:"pill-g"},
+  i3: {label:"Holter 24h ECG — 22 Jun 2025", meta:"Cardiology · Hospital Clínic de Barcelona · Dr. R. Puig", status:"Final", statuscls:"pill-g"},
+  i4: {label:"Chest X-ray PA — 22 Jun 2025", meta:"Radiology · Hospital Clínic de Barcelona · Dr. J. Mas", status:"Final", statuscls:"pill-g"},
+};
+
+function switchTab(name, el){
+  document.querySelectorAll('.etab').forEach(t=>t.classList.remove('on'));
+  if(el) el.classList.add('on');
+  else document.querySelectorAll('.etab').forEach((t,i)=>{if(['triage','history','orders','notes','imaging'][i]===name)t.classList.add('on')});
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('tab-'+name).classList.add('on');
+}
+
+function togF(btn){
+  const k=btn.dataset.k;
+  if(AF.has(k)){AF.delete(k);btn.classList.remove('on');}
+  else{AF.add(k);btn.classList.add('on');}
+}
+
+const PRESETS = {
+  high:{sbp:168,hr:112,spo2:94,pain:9,onset:'acute',trop:520,chol:272,gluc:148,meno:42,preg:3,female:["preeclampsia","gest_dm","early_meno"],hist:["htn","dyslip","dm2","family_cvd","prior_cvd"]},
+  medium:{sbp:148,hr:96,spo2:97,pain:6,onset:'sub',trop:38,chol:224,gluc:118,meno:43,preg:2,female:["preeclampsia","early_meno"],hist:["htn","dyslip"]},
+  low:{sbp:126,hr:70,spo2:99,pain:2,onset:'chronic',trop:7,chol:186,gluc:92,meno:51,preg:1,female:["hrt"],hist:[]},
+};
+
+function loadPreset(name){
+  const p=PRESETS[name];
+  ['sbp','hr','spo2','pain','trop','chol','gluc','meno','preg'].forEach(k=>{const el=document.getElementById('f-'+k);if(el)el.value=p[k];});
+  document.getElementById('f-onset').value=p.onset;
+  AF.clear();
+  [...p.female,...p.hist].forEach(k=>AF.add(k));
+  document.querySelectorAll('#ftogs .tog,#htogs .tog').forEach(b=>{b.classList.toggle('on',AF.has(b.dataset.k));});
+  document.getElementById('result-idle').style.display='block';
+  document.getElementById('result-out').style.display='none';
+  document.getElementById('api-log').style.display='none';
+  document.getElementById('score-btn').innerHTML='<i class="ti ti-cpu" aria-hidden="true"></i> Run HerHeart risk score';
+  document.getElementById('score-btn').disabled=false;
+}
+
+function computeRisk(){
+  let s=0;
+  const g=id=>(+document.getElementById(id)?.value||0);
+  const onset=document.getElementById('f-onset')?.value;
+  const trop=g('f-trop');if(trop>200)s+=30;else if(trop>50)s+=20;else if(trop>14)s+=10;
+  const sbp=g('f-sbp');if(sbp>160)s+=12;else if(sbp>140)s+=7;
+  const hr=g('f-hr');if(hr>100)s+=8;else if(hr>90)s+=4;
+  const spo2=g('f-spo2');if(spo2<95)s+=10;else if(spo2<98)s+=3;
+  if(onset==='acute')s+=12;else if(onset==='sub')s+=6;
+  s+=g('f-pain')*1.5;
+  const chol=g('f-chol');if(chol>240)s+=8;else if(chol>200)s+=4;
+  const gluc=g('f-gluc');if(gluc>126)s+=7;else if(gluc>100)s+=3;
+  const meno=g('f-meno');
+  if(AF.has('preeclampsia'))s+=14;
+  if(AF.has('early_meno')||meno<45)s+=12;
+  if(AF.has('gest_dm'))s+=10;
+  if(AF.has('pcos'))s+=6;
+  if(AF.has('hrt'))s-=3;
+  if(AF.has('htn'))s+=8;if(AF.has('dyslip'))s+=6;if(AF.has('dm2'))s+=10;
+  if(AF.has('smoking'))s+=9;if(AF.has('family_cvd'))s+=7;if(AF.has('prior_cvd'))s+=18;
+  return Math.min(.97,Math.max(.03,s/145));
+}
+
+function buildShap(){
+  const g=id=>(+document.getElementById(id)?.value||0);
+  const trop=g('f-trop'),sbp=g('f-sbp'),hr=g('f-hr'),spo2=g('f-spo2'),pain=g('f-pain'),meno=g('f-meno');
+  return [
+    {f:'Troponin I',v:trop>200?.31:trop>50?.22:trop>14?.10:.02,pos:trop>14},
+    {f:'Prior CVD',v:AF.has('prior_cvd')?.22:.01,pos:AF.has('prior_cvd')},
+    {f:'Preeclampsia hx',v:AF.has('preeclampsia')?.19:.01,pos:AF.has('preeclampsia')},
+    {f:'Early menopause',v:(AF.has('early_meno')||meno<45)?.16:.01,pos:AF.has('early_meno')||meno<45},
+    {f:'Systolic BP',v:sbp>160?.13:sbp>140?.08:.03,pos:sbp>140},
+    {f:'Gestational DM',v:AF.has('gest_dm')?.12:.01,pos:AF.has('gest_dm')},
+    {f:'Type 2 DM',v:AF.has('dm2')?.11:.01,pos:AF.has('dm2')},
+    {f:'SpO₂',v:spo2<95?.11:spo2<98?.04:.01,pos:spo2<97},
+    {f:'Pain severity',v:Math.round(pain*.018*100)/100,pos:pain>5},
+    {f:'Heart rate',v:hr>100?.09:hr>90?.05:.02,pos:hr>90},
+  ].sort((a,b)=>b.v-a.v).slice(0,6);
+}
+
+async function runScore(){
+  const btn=document.getElementById('score-btn');
+  btn.disabled=true;
+  btn.innerHTML='<div class="spin"></div> Calling API…';
+  document.getElementById('result-idle').style.display='none';
+  document.getElementById('result-out').style.display='none';
+  await new Promise(r=>setTimeout(r,1400));
+  const prob=computeRisk();
+  const pct=Math.round(prob*100);
+  const tier=prob>=.65?{l:'HIGH RISK',c:'#C0392B',bg:'#FDEDEC',bc:'rgba(192,57,43,.3)',tip:'Immediate cardiology review required'}
+    :prob>=.35?{l:'INTERMEDIATE',c:'#B06E00',bg:'#FFF4E0',bc:'rgba(176,110,0,.3)',tip:'Urgent workup — cardiology within 2h'}
+    :{l:'LOW RISK',c:'#1A7A4A',bg:'#E8F6EE',bc:'rgba(26,122,74,.3)',tip:'Standard monitoring, reassess at 2h'};
+  const shap=buildShap();
+  const lat=(Math.random()*80+110).toFixed(0);
+  const audit='AUD-'+Math.random().toString(36).slice(2,10).toUpperCase();
+  document.getElementById('log-lat').textContent=lat+' ms';
+  document.getElementById('log-audit').textContent='audit: '+audit;
+  document.getElementById('api-log').style.display='flex';
+  const tag=document.getElementById('pt-risk-tag');
+  tag.textContent='HerHeart: '+tier.l;
+  tag.style.cssText=`margin-left:auto;padding:2px 9px;border-radius:4px;font-size:10px;font-weight:600;background:${tier.bg};color:${tier.c};border:0.5px solid ${tier.bc}`;
+  const acts=tier.l==='HIGH RISK'
+    ?['12-lead ECG within 10 min','Serial troponin 0h/1h/3h','Cardiology consult — STAT','IV access + aspirin 300mg PO','Admit to monitored bed']
+    :tier.l==='INTERMEDIATE'
+    ?['12-lead ECG + chest X-ray','Serial troponin 0h/3h','Cardiology review within 2h','Consider early stress testing']
+    :['Standard 12-lead ECG','Single troponin at 3h','Reassess at 2h','Consider discharge + GP follow-up'];
+  document.getElementById('result-out').style.display='block';
+  document.getElementById('result-out').innerHTML=`
+    <div style="background:${tier.bg};border:0.5px solid ${tier.bc};border-radius:7px;padding:10px;text-align:center;margin-bottom:9px">
+      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:${tier.c};margin-bottom:2px">${tier.l}</div>
+      <div style="font-family:var(--font-serif,serif);font-size:32px;color:${tier.c};font-weight:500;line-height:1">${pct}%</div>
+      <div style="font-size:10px;color:${tier.c};opacity:.75;margin-top:4px;line-height:1.4">${tier.tip}</div>
+    </div>
+    <div style="height:5px;border-radius:3px;background:var(--color-border-tertiary);overflow:hidden;margin-bottom:9px">
+      <div style="height:100%;border-radius:3px;background:${tier.c};width:${pct}%;transition:width .8s ease"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:9px;font-size:11px">
+      ${[['Model','XGBoost v2.4.1'],['Latency',lat+' ms'],['Features','41 inputs'],['Drift','Nominal']].map(([k,v])=>`<div style="background:var(--color-background-secondary);border-radius:5px;padding:5px 7px;border:0.5px solid var(--color-border-tertiary)"><div style="font-size:10px;color:var(--color-text-secondary)">${k}</div><div style="font-weight:500;color:var(--color-text-primary)">${v}</div></div>`).join('')}
+    </div>
+    <div style="margin-bottom:9px">
+      <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--color-text-secondary);margin-bottom:6px">SHAP contributions</div>
+      ${shap.map(r=>{const w=Math.min(Math.round(r.v*180),100);const col=r.pos?'#C0392B':'#1A7A4A';return`<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;font-size:10px"><div style="width:80px;flex-shrink:0;color:var(--color-text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.f}</div><div style="flex:1;height:5px;border-radius:3px;background:var(--color-background-secondary)"><div style="height:100%;border-radius:3px;background:${col};width:${w}%;transition:width .7s ease"></div></div><div style="width:26px;text-align:right;color:var(--color-text-secondary)">${r.v>.01?'+':''}${r.v.toFixed(2)}</div></div>`;}).join('')}
+    </div>
+    <div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:8px">
+      <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--color-text-secondary);margin-bottom:6px">Recommended pathway</div>
+      ${acts.map(a=>`<div style="display:flex;gap:5px;margin-bottom:4px;font-size:11px;color:var(--color-text-primary);line-height:1.4"><span style="color:${tier.c};flex-shrink:0">✓</span>${a}</div>`).join('')}
+    </div>`;
+  updateOrdersAI(tier,prob);
+  updateNotesAI(tier,pct,shap,lat,audit,acts);
+  btn.disabled=false;
+  btn.innerHTML='<i class="ti ti-refresh" aria-hidden="true"></i> Rescore patient';
+}
+
+function updateOrdersAI(tier,prob){
+  const panel=document.getElementById('ai-orders-panel');
+  const items=tier.l==='HIGH RISK'
+    ?[['Cardiology consult — STAT','STAT'],['Serial troponin 1h','STAT'],['IV access + heparin hold','STAT'],['Continuous cardiac monitoring','Urgent'],['Aspirin 300mg PO now','STAT']]
+    :tier.l==='INTERMEDIATE'
+    ?[['Cardiology review within 2h','Urgent'],['Serial troponin 3h','STAT'],['Chest X-ray PA','Urgent'],['Echo TTE — same day','Urgent']]
+    :[['Single troponin 3h','Routine'],['Standard ECG at 2h','Routine'],['GP follow-up letter','Routine']];
+  panel.innerHTML=`
+    <div style="padding:7px 10px;background:rgba(14,124,134,.07);border:0.5px solid rgba(14,124,134,.25);border-radius:6px;margin-bottom:8px;font-size:11px">
+      <span style="color:#0E7C86;font-weight:500">HerHeart recommends for ${tier.l.toLowerCase()} patient:</span>
+    </div>
+    ${items.map(([name,pri])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px">
+      <div><i class="ti ti-circle-plus" aria-hidden="true" style="margin-right:5px;color:#0E7C86;font-size:13px"></i>${name}</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span class="pill ${pri==='STAT'?'pill-d':pri==='Urgent'?'pill-a':'pill-n'}">${pri}</span>
+        <button onclick="addAIOrder(this,'${name}','${pri}')" style="font-size:10px;background:#0E7C86;color:#fff;border:none;padding:3px 8px;border-radius:4px;cursor:pointer">Add</button>
+      </div>
+    </div>`).join('')}`;
+  const cnt=document.getElementById('orders-count');
+  cnt.style.background='rgba(192,57,43,.25)';cnt.style.color='#C0392B';
+}
+
+function updateNotesAI(tier,pct,shap,lat,audit,acts){
+  NOTE_CONTENTS.n3.body=`
+    <div style="padding:8px 10px;background:${tier.l==='HIGH RISK'?'#FDEDEC':tier.l==='INTERMEDIATE'?'#FFF4E0':'#E8F6EE'};border:0.5px solid ${tier.l==='HIGH RISK'?'rgba(192,57,43,.3)':tier.l==='INTERMEDIATE'?'rgba(176,110,0,.3)':'rgba(26,122,74,.3)'};border-radius:6px;margin-bottom:10px;text-align:center">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:${tier.l==='HIGH RISK'?'#C0392B':tier.l==='INTERMEDIATE'?'#B06E00':'#1A7A4A'};margin-bottom:2px">${tier.l}</div>
+      <div style="font-size:24px;font-weight:500;color:${tier.l==='HIGH RISK'?'#C0392B':tier.l==='INTERMEDIATE'?'#B06E00':'#1A7A4A'}">${pct}%</div>
+      <div style="font-size:11px;color:var(--color-text-secondary)">${tier.tip}</div>
+    </div>
+    <p style="margin-bottom:8px;font-size:12px"><strong>Model:</strong> XGBoost v2.4.1 · 41 female-specific features · Latency ${lat}ms · Audit ID: ${audit}</p>
+    <p style="margin-bottom:8px;font-size:12px"><strong>Top risk drivers (SHAP):</strong> ${shap.filter(r=>r.pos&&r.v>.05).map(r=>r.f+' ('+'+'+r.v.toFixed(2)+')').join(', ')||'None dominant'}.</p>
+    <p style="margin-bottom:8px;font-size:12px"><strong>Female-specific features activated:</strong> ${[...AF].filter(k=>['preeclampsia','early_meno','gest_dm','pcos','hrt'].includes(k)).join(', ')||'None'} — retrieved automatically via FHIR R4.</p>
+    <p style="margin-bottom:8px;font-size:12px"><strong>Recommended pathway:</strong><br>${acts.map(a=>'• '+a).join('<br>')}</p>
+    <p style="margin-bottom:0;font-size:11px;color:var(--color-text-secondary)">This AI output is a clinical decision support tool. Final clinical judgement remains with the attending physician. All inferences are logged in the HerHeart audit trail.</p>`;
+  NOTE_CONTENTS.n3.status='Generated';
+  NOTE_CONTENTS.n3.statuscls='pill-t';
+}
+
+function selectNote(id,el){
+  document.querySelectorAll('#note-list > div').forEach(d=>{d.style.borderColor='transparent';d.style.background='transparent';});
+  el.style.borderColor='var(--color-border-info)';el.style.background='var(--color-background-info)';
+  const n=NOTE_CONTENTS[id];
+  if(!n)return;
+  document.getElementById('note-content').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div><div style="font-size:13px;font-weight:500;color:var(--color-text-primary)">${n.title}</div>
+      <div style="font-size:11px;color:var(--color-text-secondary)">${n.meta}</div></div>
+      <span class="pill ${n.statuscls}">${n.status}</span>
+    </div>
+    <div class="card" style="font-size:12px;line-height:1.8">${n.body}</div>`;
+}
+
+function selectImg(id,el){
+  document.querySelectorAll('#tab-imaging > div > div:first-child > div').forEach(d=>{d.style.borderColor='transparent';d.style.background='transparent';});
+  el.style.borderColor='var(--color-border-info)';el.style.background='var(--color-background-info)';
+  const img=IMG_CONTENTS[id];
+  if(!img)return;
+  const content=document.getElementById('img-content');
+  content.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div><div style="font-size:13px;font-weight:500">${img.label}</div>
+      <div style="font-size:11px;color:var(--color-text-secondary)">${img.meta}</div></div>
+      <span class="pill ${img.statuscls}">${img.status}</span>
+    </div>
+    <div class="card" style="font-size:12px;line-height:1.8;color:var(--color-text-secondary);text-align:center;padding:32px">
+      <i class="ti ti-scan" aria-hidden="true" style="font-size:32px;display:block;margin-bottom:12px;opacity:.35"></i>
+      ${id==='i2'?`<p style="margin-bottom:8px"><strong style="color:var(--color-text-primary)">Echocardiogram TTE — 08 Nov 2025</strong></p><p style="margin-bottom:8px">EF 58% (preserved). Mild Grade I diastolic dysfunction. No RWMA. Aortic valve normal. Trace MR. No pericardial effusion.</p><p>Conclusion: No structural or functional cardiac pathology. Annual review recommended.</p>`
+      :id==='i3'?`<p style="margin-bottom:8px"><strong style="color:var(--color-text-primary)">Holter 24h ECG — 22 Jun 2025</strong></p><p style="margin-bottom:8px">Total beats: 98,420. Sinus rhythm throughout. No significant bradycardia or tachycardia. Isolated APBs ×14 (benign). No VT/VF. No significant ST changes over 24h.</p><p>Conclusion: Normal Holter. Palpitations not associated with significant arrhythmia.</p>`
+      :id==='i4'?`<p style="margin-bottom:8px"><strong style="color:var(--color-text-primary)">Chest X-ray PA — 22 Jun 2025</strong></p><p style="margin-bottom:8px">Normal cardiac silhouette. CTR 0.46. Clear lung fields. No pneumothorax, effusion, or consolidation. Normal mediastinum.</p><p>Conclusion: No acute cardiothoracic pathology.</p>`
+      :`<p>Select a study from the list to view the report.</p>`}
+    </div>`;
+}
+
+let orderCount=3;
+function addOrder(){
+  const type=document.getElementById('new-order-type').value;
+  const pri=document.getElementById('new-order-priority').value;
+  orderCount++;
+  const id='o'+orderCount;
+  const div=document.createElement('div');
+  div.className='card row-sep';div.id=id;div.style.marginBottom='8px';
+  div.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+    <div><span style="font-size:12px;font-weight:500;color:var(--color-text-primary)">${type}</span>
+    <span class="pill ${pri==='STAT'?'pill-d':'pill-n'}" style="margin-left:6px">${pri}</span></div>
+    <span class="pill pill-a">Ordered</span></div>
+    <div style="font-size:11px;color:var(--color-text-secondary)">Now · ordered by Dr. Martínez</div>`;
+  document.getElementById('orders-list').appendChild(div);
+  const cnt=document.getElementById('orders-count');
+  cnt.textContent=orderCount+' active';
+}
+
+function addAIOrder(btn,name,pri){
+  btn.textContent='Added';btn.style.background='#1A7A4A';btn.disabled=true;
+  addOrderDirect(name,pri);
+}
+
+function addOrderDirect(name,pri){
+  orderCount++;
+  const div=document.createElement('div');
+  div.className='card row-sep';div.style.marginBottom='8px';
+  div.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+    <div><span style="font-size:12px;font-weight:500">${name}</span>
+    <span class="pill ${pri==='STAT'?'pill-d':'pill-n'}" style="margin-left:6px">${pri}</span>
+    <span class="pill pill-t" style="margin-left:4px">AI suggested</span></div>
+    <span class="pill pill-a">Ordered</span></div>
+    <div style="font-size:11px;color:var(--color-text-secondary)">Now · AI-assisted · Dr. Martínez</div>`;
+  document.getElementById('orders-list').appendChild(div);
+  const cnt=document.getElementById('orders-count');
+  cnt.textContent=orderCount+' active';
+}
+</script>

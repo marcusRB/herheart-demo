@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import herheartEhrFullDemoHtml from "./herheart_ehr_full_demo.html?raw";
+import claraImg from "./assets/clara.png";
+import ivanImg from "./assets/ivan.png";
+import marcoImg from "./assets/marco.png";
+import martaImg from "./assets/marta.png";
+import rajaeImg from "./assets/rajae.png";
+import victorImg from "./assets/victor.png";
 
 // ─── Design tokens — Healthcare B2B palette ───────────────────────────────────
 // Navy authority + clinical teal + rose/mauve for women's health
@@ -947,17 +953,20 @@ const TeamPage = () => (
     <Section>
       <div className="grid-3" style={{ marginBottom:40 }}>
         {[
-          ["Rajae El Gaouzi • Founder / CEO","Leads the strategic vision, partnerships, and overall growth of HerNextBeat, driving innovation in women’s cardiovascular healthcare.","CEO · Strategy · Fundraising"],
-          ["Clara Gonzalez • Chief Medical Officer (CMO)","Oversees clinical strategy, medical validation, and collaboration with healthcare professionals to ensure patient-centered and evidence-based solutions.","CMO · Clinical validation · KOL"],
-          ["Marco Russo • Chief Financial Officer (CFO)","Manages financial strategy, investment planning, budgeting, and long-term business sustainability.","CFO · Finance · Strategy"],
-          ["Iván Peréz López • Chief Technology Officer (CTO)","Leads the development of HerNextBeat’s AI infrastructure, software architecture, and integration with healthcare systems.","CTO · Model · Infrastructure"],
-          ["Victor Gutierrez Gonzalez • Regulatory Affairs and Quality Assurance (QA) Manager","Ensures compliance with FDA, HIPAA, and healthcare quality standards while overseeing regulatory strategy and product safety.","Regulatory · Compliance · Legal"],
-          ["Marta Meroño Rafel • Operation and Marketing Officer (OMO)","Coordinates business operations, marketing strategy, brand development, and communication to support market adoption and company growth.","OMO · Business development"],
-        ].map(([role,bio,tags]) => (
+          [rajaeImg, "Rajae El Gaouzi • Founder / CEO","Leads the strategic vision, partnerships, and overall growth of HerNextBeat, driving innovation in women’s cardiovascular healthcare.","CEO · Strategy · Fundraising"],
+          [claraImg, "Clara Gonzalez • Chief Medical Officer (CMO)","Oversees clinical strategy, medical validation, and collaboration with healthcare professionals to ensure patient-centered and evidence-based solutions.","CMO · Clinical validation · KOL"],
+          [marcoImg, "Marco Russo • Chief Financial Officer (CFO)","Manages financial strategy, investment planning, budgeting, and long-term business sustainability.","CFO · Finance · Strategy"],
+          [ivanImg, "Iván Peréz López • Chief Technology Officer (CTO)","Leads the development of HerNextBeat’s AI infrastructure, software architecture, and integration with healthcare systems.","CTO · Model · Infrastructure"],
+          [victorImg, "Victor Gutierrez Gonzalez • Regulatory Affairs and Quality Assurance (QA) Manager","Ensures compliance with FDA, HIPAA, and healthcare quality standards while overseeing regulatory strategy and product safety.","Regulatory · Compliance · Legal"],
+          [martaImg, "Marta Meroño Rafel • Operation and Marketing Officer (OMO)","Coordinates business operations, marketing strategy, brand development, and communication to support market adoption and company growth.","OMO · Business development"],
+        ].map(([image, role, bio, tags]) => (
           <div key={role} className="card">
-            <div style={{ width:42, height:42, borderRadius:"50%",
-              background:T.tealFaint, border:`1.5px solid ${T.teal}44`,
-              marginBottom:14 }} />
+            <img
+              src={image}
+              alt={role}
+              style={{ width:42, height:42, borderRadius:"50%", objectFit:"cover",
+                border:`1.5px solid ${T.teal}44`, marginBottom:14 }}
+            />
             <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase",
               letterSpacing:".08em", color:T.teal, marginBottom:6 }}>{role}</div>
             <div style={{ fontSize:13, color:T.textMid, lineHeight:1.75, marginBottom:10 }}>{bio}</div>
@@ -970,7 +979,7 @@ const TeamPage = () => (
         <h2 className="section-title" style={{ fontSize:24, marginBottom:10 }}>We are hiring</h2>
         <p style={{ color:T.textMid, fontSize:14, maxWidth:400, margin:"0 auto 24px", lineHeight:1.8 }}>
           Open roles: Senior ML Engineer (FHIR/healthcare AI), Clinical Data Scientist,
-          Hospital Partnerships Manager (DACH region).
+          Hospital Partnerships Manager (US/Canada and DACH region).
         </p>
         <button className="btn-secondary">View open roles →</button>
       </div>
@@ -1028,7 +1037,7 @@ const ContactPage = () => {
               <div>
                 <div style={{ fontSize:11, fontWeight:600, color:T.textMuted,
                   textTransform:"uppercase", letterSpacing:".06em", marginBottom:6 }}>Work email</div>
-                <input type="email" placeholder="you@hospital.org"
+                <input type="email" placeholder="demo@hospital.org"
                   style={{ width:"100%", background:T.bg, border:`1px solid ${T.border2}`,
                     borderRadius:7, padding:"9px 12px", color:T.text, fontSize:13, outline:"none" }} />
               </div>

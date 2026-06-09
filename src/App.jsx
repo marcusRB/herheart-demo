@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import herheartEhrFullDemoHtml from "./herheart_ehr_full_demo.html?raw";
+import herheartFinancialSimulatorHtml from "./herheart_financial_simulator.html?raw";
+import herheartStressTestHtml from "./herheart_stress_test.html?raw";
 import claraImg from "./assets/clara.png";
 import ivanImg from "./assets/ivan.png";
 import marcoImg from "./assets/marco.png";
@@ -221,7 +223,17 @@ const GLOBAL_CSS = `
   ::-webkit-scrollbar-thumb { background:${T.border2}; border-radius:3px; }
 `;
 
-const buildHerheartFullDemoSrcDoc = (templateSource) => {
+const EMBEDDED_PROMPT_BRIDGE = `
+  window.sendPrompt = window.sendPrompt || function sendPrompt(prompt) {
+    try {
+      window.parent?.postMessage({ type: "embedded-prompt", prompt }, "*");
+    } catch (error) {
+      console.info(prompt);
+    }
+  };
+`;
+
+const buildEmbeddedSrcDoc = (templateSource, { extraScript = "" } = {}) => {
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -279,10 +291,17 @@ const buildHerheartFullDemoSrcDoc = (templateSource) => {
   </head>
   <body>
     ${templateSource}
+    ${extraScript ? `<script>${extraScript}</script>` : ""}
   </body>
 </html>`;
 };
-const HERHEART_EHR_FULL_DEMO_SRCDOC = buildHerheartFullDemoSrcDoc(herheartEhrFullDemoHtml);
+const HERHEART_EHR_FULL_DEMO_SRCDOC = buildEmbeddedSrcDoc(herheartEhrFullDemoHtml);
+const HERHEART_FINANCIAL_SIMULATOR_SRCDOC = buildEmbeddedSrcDoc(herheartFinancialSimulatorHtml, {
+  extraScript: EMBEDDED_PROMPT_BRIDGE,
+});
+const HERHEART_STRESS_TEST_SRCDOC = buildEmbeddedSrcDoc(herheartStressTestHtml, {
+  extraScript: EMBEDDED_PROMPT_BRIDGE,
+});
 
 // ─── Shared components ────────────────────────────────────────────────────────
 const Dot = () => <span className="dot" />;
@@ -293,6 +312,66 @@ const Section = ({ id, style, children }) => (
   </section>
 );
 const Divider = () => <div className="divider" />;
+
+const EmbeddedHtmlFrame = ({ title, srcDoc, minHeight = 1200 }) => {
+  const iframeRef = useRef(null);
+  const iframeCleanupRef = useRef(() => {});
+
+  const syncIframeHeight = () => {
+    const iframe = iframeRef.current;
+    const doc = iframe?.contentDocument;
+
+    if (!iframe || !doc) return;
+
+    const nextHeight = Math.max(
+      doc.documentElement?.scrollHeight ?? 0,
+      doc.body?.scrollHeight ?? 0,
+    );
+
+    if (nextHeight > 0) {
+      iframe.style.height = `${nextHeight}px`;
+    }
+  };
+
+  const handleIframeLoad = () => {
+    iframeCleanupRef.current();
+
+    const iframe = iframeRef.current;
+    const frameWindow = iframe?.contentWindow;
+    const doc = iframe?.contentDocument;
+
+    if (!iframe || !frameWindow || !doc) return;
+
+    syncIframeHeight();
+
+    let resizeObserver = null;
+    if (typeof frameWindow.ResizeObserver === "function") {
+      resizeObserver = new frameWindow.ResizeObserver(syncIframeHeight);
+      resizeObserver.observe(doc.documentElement);
+      if (doc.body) resizeObserver.observe(doc.body);
+    }
+
+    frameWindow.addEventListener("resize", syncIframeHeight);
+    iframeCleanupRef.current = () => {
+      resizeObserver?.disconnect();
+      frameWindow.removeEventListener("resize", syncIframeHeight);
+    };
+  };
+
+  useEffect(() => () => iframeCleanupRef.current(), []);
+
+  return (
+    <iframe
+      ref={iframeRef}
+      title={title}
+      srcDoc={srcDoc}
+      sandbox="allow-scripts allow-same-origin"
+      loading="eager"
+      onLoad={handleIframeLoad}
+      style={{ width:"100%", minHeight, border:"none", display:"block", background:T.bg }}
+    />
+  );
+};
 
 const StatCard = ({ num, label, sub }) => (
   <div className="card card-sm" style={{ textAlign:"center" }}>
@@ -321,7 +400,7 @@ const Marquee = () => {
 };
 
 // ─── Nav ──────────────────────────────────────────────────────────────────────
-const PAGES = ["Home","Solution","Demo","Business","Evidence","Funding","Team","Contact"];
+const PAGES = ["Home","Solution","Demo","Business","Stress Test","Evidence","Funding","Team","Contact"];
 
 const Nav = ({ page, setPage }) => {
   const [scrolled, setScrolled] = useState(false);
@@ -519,52 +598,6 @@ const HomePage = ({ setPage }) => (
 // PAGE: DEMO — Integrated EHR triage simulation
 // ═══════════════════════════════════════════════════════════════════════════════
 const DemoPage = ({ setPage }) => {
-  const iframeRef = useRef(null);
-  const iframeCleanupRef = useRef(() => {});
-
-  const syncIframeHeight = () => {
-    const iframe = iframeRef.current;
-    const doc = iframe?.contentDocument;
-
-    if (!iframe || !doc) return;
-
-    const nextHeight = Math.max(
-      doc.documentElement?.scrollHeight ?? 0,
-      doc.body?.scrollHeight ?? 0,
-    );
-
-    if (nextHeight > 0) {
-      iframe.style.height = `${nextHeight}px`;
-    }
-  };
-
-  const handleIframeLoad = () => {
-    iframeCleanupRef.current();
-
-    const iframe = iframeRef.current;
-    const frameWindow = iframe?.contentWindow;
-    const doc = iframe?.contentDocument;
-
-    if (!iframe || !frameWindow || !doc) return;
-
-    syncIframeHeight();
-
-    let resizeObserver = null;
-    if (typeof frameWindow.ResizeObserver === "function") {
-      resizeObserver = new frameWindow.ResizeObserver(syncIframeHeight);
-      resizeObserver.observe(doc.documentElement);
-      if (doc.body) resizeObserver.observe(doc.body);
-    }
-
-    frameWindow.addEventListener("resize", syncIframeHeight);
-    iframeCleanupRef.current = () => {
-      resizeObserver?.disconnect();
-      frameWindow.removeEventListener("resize", syncIframeHeight);
-    };
-  };
-
-  useEffect(() => () => iframeCleanupRef.current(), []);
-
   return (
     <div style={{ paddingTop:58 }}>
       <div style={{ background:T.navBg, padding:"32px clamp(20px,5vw,72px) 28px" }}>
@@ -593,14 +626,10 @@ const DemoPage = ({ setPage }) => {
 
       <Section style={{ maxWidth:1200, paddingTop:32 }}>
         <div className="card" style={{ padding:16, overflow:"hidden" }}>
-          <iframe
-            ref={iframeRef}
+          <EmbeddedHtmlFrame
             title="HerNextBeat full EHR clinical demo"
             srcDoc={HERHEART_EHR_FULL_DEMO_SRCDOC}
-            sandbox="allow-scripts allow-same-origin"
-            loading="eager"
-            onLoad={handleIframeLoad}
-            style={{ width:"100%", minHeight:1400, border:"none", display:"block", background:T.bg }}
+            minHeight={1400}
           />
         </div>
       </Section>
@@ -747,6 +776,22 @@ const BusinessPage = () => {
             </div>
           ))}
         </div>
+        <div className="card" style={{ marginBottom:40, padding:16, overflow:"hidden" }}>
+          <div style={{ padding:"0 8px 16px", borderBottom:`1px solid ${T.border}`,
+            marginBottom:16, display:"flex", justifyContent:"space-between", alignItems:"center", gap:16, flexWrap:"wrap" }}>
+            <div>
+              <div style={{ fontSize:11, fontWeight:700, color:T.textMuted,
+                textTransform:"uppercase", letterSpacing:".08em", marginBottom:4 }}>Interactive model</div>
+              <div style={{ fontSize:16, fontWeight:600, color:T.navy }}>HerHeart financial simulator</div>
+            </div>
+            <div style={{ fontSize:12, color:T.textMid }}>Scenario switching, live ARR, EBITDA, LTV:CAC, payback and break-even</div>
+          </div>
+          <EmbeddedHtmlFrame
+            title="HerHeart financial simulator"
+            srcDoc={HERHEART_FINANCIAL_SIMULATOR_SRCDOC}
+            minHeight={1500}
+          />
+        </div>
         <div className="card" style={{ marginBottom:40 }}>
           <div style={{ paddingBottom:16, marginBottom:20, borderBottom:`1px solid ${T.border}`,
             display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -799,6 +844,41 @@ const BusinessPage = () => {
     </div>
   );
 };
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PAGE: STRESS TEST
+// ═══════════════════════════════════════════════════════════════════════════════
+const StressTestPage = ({ setPage }) => (
+  <div style={{ paddingTop:58 }}>
+    <div style={{ background:T.navBg, padding:"52px clamp(20px,5vw,72px)" }}>
+      <div style={{ maxWidth:1120, margin:"0 auto" }}>
+        <LabelTag>Financial stress test</LabelTag>
+        <h1 className="section-title" style={{ color:"#fff", marginBottom:16 }}>
+          Pressure-test growth,<br /><em>unit economics and runway</em>
+        </h1>
+        <p style={{ color:"rgba(255,255,255,.6)", fontSize:15, maxWidth:560, lineHeight:1.8 }}>
+          Explore churn, CAC, pricing, OPEX and retention sensitivity with a dedicated stress-testing workspace.
+          This view complements the Business model with downside analysis and scenario volatility.
+        </p>
+      </div>
+    </div>
+
+    <Section style={{ maxWidth:1200, paddingTop:32 }}>
+      <div className="card" style={{ padding:16, overflow:"hidden", marginBottom:32 }}>
+        <EmbeddedHtmlFrame
+          title="HerHeart financial stress test"
+          srcDoc={HERHEART_STRESS_TEST_SRCDOC}
+          minHeight={1650}
+        />
+      </div>
+
+      <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
+        <button className="btn-primary" onClick={() => setPage("Business")}>Back to business model</button>
+        <button className="btn-secondary" onClick={() => setPage("Funding")}>View funding case</button>
+      </div>
+    </Section>
+  </div>
+);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PAGE: EVIDENCE
@@ -1107,7 +1187,7 @@ const Footer = ({ setPage }) => (
         </div>
         <div style={{ display:"flex", gap:52, flexWrap:"wrap" }}>
           {[["Platform",["Solution","Demo","Evidence"]],
-            ["Company",["Business","Team","Funding"]],
+            ["Company",["Business","Stress Test","Team","Funding"]],
             ["Contact",["Contact","hello@hernextbeat.ai","Press kit"]],
           ].map(([group, links]) => (
             <div key={group}>
@@ -1150,12 +1230,23 @@ export default function App() {
 
   useEffect(() => { window.scrollTo({ top:0, behavior:"smooth" }); }, [page]);
 
+  useEffect(() => {
+    const handleEmbeddedPrompt = (event) => {
+      if (event.data?.type !== "embedded-prompt") return;
+      setPage("Stress Test");
+    };
+
+    window.addEventListener("message", handleEmbeddedPrompt);
+    return () => window.removeEventListener("message", handleEmbeddedPrompt);
+  }, []);
+
   const renderPage = () => {
     switch(page) {
       case "Home":     return <HomePage setPage={setPage} />;
       case "Solution": return <SolutionPage />;
       case "Demo":     return <DemoPage setPage={setPage} />;
       case "Business": return <BusinessPage />;
+      case "Stress Test": return <StressTestPage setPage={setPage} />;
       case "Evidence": return <EvidencePage />;
       case "Funding":  return <FundingPage />;
       case "Team":     return <TeamPage />;

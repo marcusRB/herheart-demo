@@ -1,0 +1,364 @@
+
+<h2 class="sr-only">HerHeart dynamic financial simulator — adjust hospital counts per tier and scenario to compute ARR, EBITDA, LTV:CAC, payback period and break-even across 5 years</h2>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:13px}
+.sim{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.sim-hdr{background:#0D1F3C;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.sim-title{font-size:13px;font-weight:500;color:#fff}
+.sim-sub{font-size:11px;color:rgba(255,255,255,.45)}
+.scen-pills{display:flex;gap:6px}
+.spill{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.5);cursor:pointer;background:transparent;transition:all .15s}
+.spill.on{background:rgba(14,124,134,.35);border-color:#1BA3B0;color:#7FD8E0}
+.kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--color-border-tertiary)}
+.kpi{background:var(--color-background-secondary);padding:12px 14px}
+.kpi-lbl{font-size:10px;color:var(--color-text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+.kpi-val{font-size:20px;font-weight:500;color:var(--color-text-primary);line-height:1}
+.kpi-sub{font-size:10px;color:var(--color-text-secondary);margin-top:3px}
+.body{padding:14px 16px}
+.sec-lbl{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-secondary);margin-bottom:10px}
+.assumptions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:16px}
+.assum-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px}
+.assum-lbl{font-size:10px;color:var(--color-text-secondary);margin-bottom:4px}
+.assum-val{font-size:12px;font-weight:500;color:var(--color-text-primary);display:flex;align-items:center;gap:4px}
+.assum-input{width:100%;background:transparent;border:none;font-size:12px;font-weight:500;color:var(--color-text-primary);font-family:var(--font-sans);outline:none;padding:0}
+.inp-grid{display:grid;grid-template-columns:60px repeat(3,minmax(0,1fr));gap:6px;margin-bottom:14px;align-items:center}
+.inp-yr{font-size:12px;font-weight:500;color:var(--color-text-secondary)}
+.inp-hd{font-size:10px;font-weight:500;color:var(--color-text-secondary);text-align:center;padding:4px 0;border-radius:4px}
+.inp-t1{background:rgba(14,124,134,.08);color:#0E7C86}
+.inp-t2{background:rgba(43,81,146,.08);color:#2B5192}
+.inp-t3{background:rgba(181,68,110,.1);color:#B5446E}
+.inp-cell{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:5px 8px;width:100%;text-align:center;font-size:12px;color:var(--color-text-primary);font-family:var(--font-sans);outline:none;transition:border-color .15s}
+.inp-cell:focus{border-color:#0E7C86}
+.results-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;table-layout:fixed}
+.results-table th{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--color-text-secondary);padding:6px 8px;text-align:right;border-bottom:0.5px solid var(--color-border-tertiary)}
+.results-table th:first-child{text-align:left}
+.results-table td{padding:7px 8px;text-align:right;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+.results-table td:first-child{text-align:left;font-weight:500;color:var(--color-text-secondary)}
+.results-table tr:last-child td{border-bottom:none;font-weight:500}
+.pos{color:#1A7A4A}.neg{color:#C0392B}.warn{color:#B06E00}
+.be-bar{height:6px;border-radius:3px;background:var(--color-border-tertiary);overflow:hidden;margin-top:4px}
+.be-fill{height:100%;border-radius:3px;background:#0E7C86;transition:width .6s ease}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.chart-card{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px}
+.chart-title{font-size:11px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px}
+.legend{display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary)}
+.leg-sq{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+</style>
+
+<div class="sim">
+<div class="sim-hdr">
+  <div>
+    <div class="sim-title"><i class="ti ti-chart-line" aria-hidden="true" style="margin-right:6px"></i>HerHeart — dynamic financial simulator</div>
+    <div class="sim-sub">Adjust hospital counts per tier · all metrics recalculate live</div>
+  </div>
+  <div class="scen-pills">
+    <button class="spill" onclick="loadScenario('pessimistic',this)">Pessimistic</button>
+    <button class="spill on" onclick="loadScenario('base',this)">Base case</button>
+    <button class="spill" onclick="loadScenario('optimistic',this)">Optimistic</button>
+  </div>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi"><div class="kpi-lbl">Y5 ARR</div><div class="kpi-val" id="kpi-arr">—</div><div class="kpi-sub" id="kpi-arr-sub"></div></div>
+  <div class="kpi"><div class="kpi-lbl">Y5 EBITDA</div><div class="kpi-val" id="kpi-ebitda">—</div><div class="kpi-sub" id="kpi-ebitda-sub"></div></div>
+  <div class="kpi"><div class="kpi-lbl">LTV : CAC</div><div class="kpi-val" id="kpi-ltvcac">—</div><div class="kpi-sub" id="kpi-ltvcac-sub"></div></div>
+  <div class="kpi"><div class="kpi-lbl">Break-even year</div><div class="kpi-val" id="kpi-be">—</div><div class="kpi-sub" id="kpi-be-sub"></div></div>
+</div>
+
+<div class="body">
+
+  <div class="sec-lbl"><i class="ti ti-settings" aria-hidden="true" style="margin-right:5px"></i>Assumptions</div>
+  <div class="assumptions">
+    <div class="assum-card"><div class="assum-lbl">Tier 1 monthly fee</div><div class="assum-val">$<input class="assum-input" id="a-t1fee" type="number" value="10000" min="1000" step="500" onchange="recalc()"></div></div>
+    <div class="assum-card"><div class="assum-lbl">Tier 2 monthly fee</div><div class="assum-val">$<input class="assum-input" id="a-t2fee" type="number" value="12000" min="1000" step="500" onchange="recalc()"></div></div>
+    <div class="assum-card"><div class="assum-lbl">Tier 3 monthly fee</div><div class="assum-val">$<input class="assum-input" id="a-t3fee" type="number" value="15000" min="1000" step="500" onchange="recalc()"></div></div>
+    <div class="assum-card"><div class="assum-lbl">Implementation fee</div><div class="assum-val">$<input class="assum-input" id="a-impl" type="number" value="25000" min="0" step="1000" onchange="recalc()"></div></div>
+    <div class="assum-card"><div class="assum-lbl">COGS % of subscription</div><div class="assum-val"><input class="assum-input" id="a-cogs" type="number" value="15" min="0" max="60" step="1" onchange="recalc()">%</div></div>
+    <div class="assum-card"><div class="assum-lbl">Fixed monthly OPEX ($k)</div><div class="assum-val">$<input class="assum-input" id="a-opex" type="number" value="195" min="50" step="5" onchange="recalc()">k</div></div>
+    <div class="assum-card"><div class="assum-lbl">CAC per hospital ($k)</div><div class="assum-val">$<input class="assum-input" id="a-cac" type="number" value="25" min="5" step="1" onchange="recalc()">k</div></div>
+    <div class="assum-card"><div class="assum-lbl">Avg retention (years)</div><div class="assum-val"><input class="assum-input" id="a-ret" type="number" value="5" min="1" max="10" step="0.5" onchange="recalc()"> yrs</div></div>
+  </div>
+
+  <div class="sec-lbl"><i class="ti ti-building-hospital" aria-hidden="true" style="margin-right:5px"></i>Hospital count inputs (cumulative active)</div>
+  <div class="inp-grid" id="inp-grid">
+    <div></div>
+    <div class="inp-hd inp-t1">Tier 1 · community</div>
+    <div class="inp-hd inp-t2">Tier 2 · regional</div>
+    <div class="inp-hd inp-t3">Tier 3 · academic</div>
+  </div>
+
+  <div class="sec-lbl"><i class="ti ti-table" aria-hidden="true" style="margin-right:5px"></i>Year-by-year projections</div>
+  <table class="results-table" id="results-table" aria-label="Year by year financial projections table">
+    <thead>
+      <tr>
+        <th style="text-align:left">Year</th>
+        <th>Hospitals</th>
+        <th>ARR ($M)</th>
+        <th>Revenue ($M)</th>
+        <th>Gross margin</th>
+        <th>EBITDA ($M)</th>
+        <th>EBITDA %</th>
+        <th>LTV:CAC</th>
+        <th>Payback (mo)</th>
+      </tr>
+    </thead>
+    <tbody id="results-body"></tbody>
+  </table>
+
+  <div class="sec-lbl"><i class="ti ti-chart-bar" aria-hidden="true" style="margin-right:5px"></i>Visual breakdown</div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">ARR vs total costs ($M)</div>
+      <div class="legend">
+        <span class="leg-item"><span class="leg-sq" style="background:#0E7C86"></span>ARR</span>
+        <span class="leg-item"><span class="leg-sq" style="background:#B5446E;opacity:.6"></span>Total costs</span>
+      </div>
+      <div style="position:relative;height:180px"><canvas id="chart-arr" role="img" aria-label="Line chart comparing ARR growth against total operating costs over 5 years">ARR and cost projections over 5 years.</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">EBITDA margin by year (%)</div>
+      <div class="legend">
+        <span class="leg-item"><span class="leg-sq" style="background:#1A7A4A"></span>Positive</span>
+        <span class="leg-item"><span class="leg-sq" style="background:#C0392B;opacity:.6"></span>Negative</span>
+      </div>
+      <div style="position:relative;height:180px"><canvas id="chart-ebitda" role="img" aria-label="Bar chart showing EBITDA margin percentage per year, negative in early years turning positive">EBITDA margin per year.</canvas></div>
+    </div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Hospital mix by tier</div>
+      <div class="legend" id="hosp-legend"></div>
+      <div style="position:relative;height:180px"><canvas id="chart-hosp" role="img" aria-label="Stacked bar chart showing cumulative hospital count split by tier 1, tier 2 and tier 3 per year">Hospital tier distribution per year.</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Break-even progress</div>
+      <div id="be-detail" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px"></div>
+      <div style="position:relative;height:180px"><canvas id="chart-be" role="img" aria-label="Horizontal bar chart showing actual vs break-even hospitals per year">Break-even hospital threshold vs actual.</canvas></div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary)">
+    <div style="font-size:11px;color:var(--color-text-secondary)">All figures in USD. OPEX assumed fixed; model does not include equity dilution or tax.</div>
+    <button onclick="sendPrompt('Can you help me stress-test the HerHeart financial model with different churn rates and CAC assumptions? ↗')" style="font-size:11px;padding:6px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer">Stress-test assumptions ↗</button>
+  </div>
+
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const YEARS = [2027,2028,2029,2030,2031];
+
+const SCENARIOS = {
+  pessimistic:{t1:[1,3,6,10,14],t2:[0,0,1,3,6],t3:[0,0,0,1,2]},
+  base:        {t1:[2,5,10,15,20],t2:[0,1,4,8,15],t3:[0,0,1,3,5]},
+  optimistic:  {t1:[3,8,15,22,30],t2:[0,2,6,12,20],t3:[0,0,2,5,8]},
+};
+
+let chartARR=null, chartEBITDA=null, chartHosp=null, chartBE=null;
+
+function getVal(id){return parseFloat(document.getElementById(id).value)||0;}
+function getInp(yr,tier){return parseInt(document.getElementById(`h-${yr}-${tier}`).value)||0;}
+
+function fmt(v,dec=2){
+  const sign=v<0?'-':'';
+  return (v<0?'-':'')+'$'+Math.abs(v).toFixed(dec)+'M';
+}
+function fmtPct(v){return (v>=0?'':'')+v.toFixed(1)+'%';}
+
+function recalc(){
+  const t1fee=getVal('a-t1fee'), t2fee=getVal('a-t2fee'), t3fee=getVal('a-t3fee');
+  const impl=getVal('a-impl'), cogsPct=getVal('a-cogs')/100;
+  const opexMo=getVal('a-opex')*1000, cacK=getVal('a-cac')*1000, ret=getVal('a-ret');
+  const opexAnn=opexMo*12;
+
+  const rows=[];
+  let prevT1=0,prevT2=0,prevT3=0;
+
+  for(let i=0;i<5;i++){
+    const yr=YEARS[i];
+    const t1=getInp(yr,1), t2=getInp(yr,2), t3=getInp(yr,3);
+    const total=t1+t2+t3;
+    const newHosp=(t1-prevT1)+(t2-prevT2)+(t3-prevT3);
+
+    const subMo=t1*t1fee + t2*t2fee + t3*t3fee;
+    const arr=(subMo*12)/1e6;
+    const implRev=(Math.max(0,newHosp)*impl)/1e6;
+    const totalRev=arr+implRev;
+    const cogs=arr*cogsPct;
+    const grossProfit=totalRev-cogs;
+    const grossMargin=totalRev>0?(grossProfit/totalRev*100):0;
+    const ebitda=grossProfit-opexAnn/1e6;
+    const ebitdaMarg=totalRev>0?(ebitda/totalRev*100):0;
+
+    const wtdFee=total>0?((t1*t1fee+t2*t2fee+t3*t3fee)/total):t1fee;
+    const contribMo=wtdFee*(1-cogsPct);
+    const ltv=contribMo*12*ret/1000;
+    const cacK_=cacK/1000;
+    const ltvcac=cacK_>0?(ltv/cacK_):0;
+    const payback=contribMo>0?(cacK/contribMo):99;
+
+    rows.push({yr,t1,t2,t3,total,arr,implRev,totalRev,grossMargin,ebitda,ebitdaMarg,ltvcac,payback,contribMo,opexAnn,wtdFee});
+    prevT1=t1;prevT2=t2;prevT3=t3;
+  }
+
+  renderKPIs(rows,opexMo,t1fee,t2fee,t3fee,cogsPct);
+  renderTable(rows);
+  renderCharts(rows);
+}
+
+function renderKPIs(rows,opexMo,t1fee,t2fee,t3fee,cogsPct){
+  const last=rows[4];
+  document.getElementById('kpi-arr').textContent='$'+last.arr.toFixed(2)+'M';
+  document.getElementById('kpi-arr-sub').textContent=last.total+' hospitals · Y5 ARR';
+  const ebitdaEl=document.getElementById('kpi-ebitda');
+  ebitdaEl.textContent=(last.ebitda>=0?'+':'')+last.ebitda.toFixed(2)+'M';
+  ebitdaEl.style.color=last.ebitda>=0?'#1A7A4A':'#C0392B';
+  document.getElementById('kpi-ebitda-sub').textContent='margin '+last.ebitdaMarg.toFixed(1)+'%';
+  document.getElementById('kpi-ltvcac').textContent=last.ltvcac.toFixed(1)+':1';
+  document.getElementById('kpi-ltvcac-sub').textContent='payback '+Math.round(last.payback)+' months';
+  const beYr=rows.find(r=>r.ebitda>=0);
+  const beEl=document.getElementById('kpi-be');
+  beEl.textContent=beYr?beYr.yr:'> 2031';
+  beEl.style.color=beYr?'#1A7A4A':'#C0392B';
+  document.getElementById('kpi-be-sub').textContent=beYr?'first EBITDA positive year':'not reached in period';
+}
+
+function renderTable(rows){
+  const tb=document.getElementById('results-body');
+  tb.innerHTML='';
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    const cls=r.ebitda>=0?'pos':r.ebitda>-0.5?'warn':'neg';
+    tr.innerHTML=`
+      <td>${r.yr}</td>
+      <td>${r.total}</td>
+      <td>$${r.arr.toFixed(2)}M</td>
+      <td>$${r.totalRev.toFixed(2)}M</td>
+      <td>${r.grossMargin.toFixed(0)}%</td>
+      <td class="${cls}">${r.ebitda>=0?'+':''}$${r.ebitda.toFixed(2)}M</td>
+      <td class="${cls}">${r.ebitdaMarg.toFixed(0)}%</td>
+      <td>${r.ltvcac.toFixed(1)}:1</td>
+      <td>${Math.round(r.payback)} mo</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function renderCharts(rows){
+  const labels=rows.map(r=>String(r.yr));
+  const arrData=rows.map(r=>parseFloat(r.arr.toFixed(2)));
+  const costData=rows.map(r=>parseFloat((r.opexAnn/1e6+r.arr*0.15).toFixed(2)));
+  const ebitdaData=rows.map(r=>parseFloat(r.ebitdaMarg.toFixed(1)));
+  const t1Data=rows.map(r=>r.t1);
+  const t2Data=rows.map(r=>r.t2);
+  const t3Data=rows.map(r=>r.t3);
+
+  const wtdFee0=rows[0].wtdFee;
+  const cogsPct=getVal('a-cogs')/100;
+  const contribMo=wtdFee0*(1-cogsPct);
+  const opexMo=getVal('a-opex')*1000;
+  const beHostThreshold=contribMo>0?Math.ceil(opexMo/contribMo):999;
+  const actualHosp=rows.map(r=>r.total);
+
+  const beDetail=document.getElementById('be-detail');
+  beDetail.textContent='Break-even threshold: '+beHostThreshold+' hospitals (based on weighted avg contribution)';
+
+  const sharedOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},animation:{duration:400}};
+
+  if(chartARR){chartARR.destroy();}
+  chartARR=new Chart(document.getElementById('chart-arr'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'ARR',data:arrData,borderColor:'#0E7C86',backgroundColor:'rgba(14,124,134,.08)',fill:true,tension:.4,pointRadius:4,borderWidth:2},
+      {label:'Total costs',data:costData,borderColor:'#B5446E',backgroundColor:'rgba(181,68,110,.06)',fill:true,tension:.4,pointRadius:4,borderWidth:2,borderDash:[5,3]}
+    ]},
+    options:{...sharedOpts,scales:{y:{ticks:{callback:v=>'$'+v+'M'},grid:{color:'rgba(128,128,128,.1)'}},x:{grid:{display:false}}}}
+  });
+
+  if(chartEBITDA){chartEBITDA.destroy();}
+  chartEBITDA=new Chart(document.getElementById('chart-ebitda'),{
+    type:'bar',
+    data:{labels,datasets:[{
+      label:'EBITDA %',
+      data:ebitdaData,
+      backgroundColor:ebitdaData.map(v=>v>=0?'rgba(26,122,74,.8)':'rgba(192,57,43,.65)'),
+      borderWidth:0,borderRadius:3
+    }]},
+    options:{...sharedOpts,scales:{
+      y:{ticks:{callback:v=>v+'%'},grid:{color:'rgba(128,128,128,.1)'}},
+      x:{grid:{display:false}}
+    }}
+  });
+
+  if(chartHosp){chartHosp.destroy();}
+  document.getElementById('hosp-legend').innerHTML=`
+    <span class="leg-item"><span class="leg-sq" style="background:#0E7C86"></span>Tier 1</span>
+    <span class="leg-item"><span class="leg-sq" style="background:#2B5192"></span>Tier 2</span>
+    <span class="leg-item"><span class="leg-sq" style="background:#B5446E"></span>Tier 3</span>`;
+  chartHosp=new Chart(document.getElementById('chart-hosp'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Tier 1',data:t1Data,backgroundColor:'rgba(14,124,134,.75)',borderWidth:0,borderRadius:0},
+      {label:'Tier 2',data:t2Data,backgroundColor:'rgba(43,81,146,.75)',borderWidth:0,borderRadius:0},
+      {label:'Tier 3',data:t3Data,backgroundColor:'rgba(181,68,110,.75)',borderWidth:0,borderRadius:0},
+    ]},
+    options:{...sharedOpts,scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{stepSize:5},grid:{color:'rgba(128,128,128,.1)'}}}}
+  });
+
+  if(chartBE){chartBE.destroy();}
+  chartBE=new Chart(document.getElementById('chart-be'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Actual hospitals',data:actualHosp,backgroundColor:actualHosp.map(v=>v>=beHostThreshold?'rgba(26,122,74,.8)':'rgba(176,110,0,.7)'),borderWidth:0,borderRadius:3},
+      {label:'Break-even threshold',data:Array(5).fill(beHostThreshold),type:'line',borderColor:'#C0392B',borderWidth:1.5,borderDash:[4,3],pointRadius:0,fill:false}
+    ]},
+    options:{...sharedOpts,scales:{y:{ticks:{stepSize:5},grid:{color:'rgba(128,128,128,.1)'}},x:{grid:{display:false}}}}
+  });
+}
+
+function buildInputGrid(){
+  const grid=document.getElementById('inp-grid');
+  const existing=grid.querySelectorAll('.yr-row');
+  existing.forEach(e=>e.remove());
+  YEARS.forEach(yr=>{
+    [1,2,3].forEach((tier,ti)=>{
+      const yrDiv=document.createElement('div');
+      yrDiv.className='yr-row';
+      yrDiv.style.cssText='display:contents';
+      if(ti===0){
+        const label=document.createElement('div');
+        label.className='inp-yr';
+        label.textContent=String(yr);
+        label.style.gridColumn='1';
+        grid.appendChild(label);
+      }
+      const input=document.createElement('input');
+      input.type='number';input.min='0';input.step='1';
+      input.className='inp-cell';
+      input.id=`h-${yr}-${tier}`;
+      input.value=SCENARIOS.base[`t${tier}`][YEARS.indexOf(yr)];
+      input.oninput=()=>recalc();
+      grid.appendChild(input);
+    });
+  });
+}
+
+function loadScenario(name,btn){
+  document.querySelectorAll('.spill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const s=SCENARIOS[name];
+  YEARS.forEach((yr,i)=>{
+    [1,2,3].forEach(t=>{
+      const el=document.getElementById(`h-${yr}-${t}`);
+      if(el) el.value=s[`t${t}`][i];
+    });
+  });
+  recalc();
+}
+
+buildInputGrid();
+recalc();
+</script>

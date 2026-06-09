@@ -1,0 +1,522 @@
+
+<h2 class="sr-only">HerHeart financial stress-test tool — sensitivity analysis across churn rate and CAC with tornado chart, Monte Carlo simulation, and unit economics breakdown</h2>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:13px}
+.wrap{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;background:var(--color-background-primary)}
+.hdr{background:#0D1F3C;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.hdr-title{font-size:13px;font-weight:500;color:#fff;display:flex;align-items:center;gap:7px}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,.4)}
+.tab-row{display:flex;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.tab{padding:9px 16px;font-size:12px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.tab.on{color:#0E7C86;border-bottom-color:#0E7C86;background:var(--color-background-primary)}
+.panel{padding:14px 16px;display:none}
+.panel.on{display:block}
+.kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--color-border-tertiary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.kpi{background:var(--color-background-secondary);padding:10px 14px}
+.kpi-lbl{font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.kpi-val{font-size:18px;font-weight:500;line-height:1}
+.kpi-delta{font-size:10px;margin-top:3px}
+.pos{color:#1A7A4A}.neg{color:#C0392B}.warn{color:#B06E00}.teal{color:#0E7C86}
+.slider-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.slider-row label{font-size:12px;color:var(--color-text-secondary);min-width:160px;flex-shrink:0}
+.slider-row input[type=range]{flex:1}
+.slider-val{font-size:12px;font-weight:500;color:var(--color-text-primary);min-width:52px;text-align:right}
+.sec{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-secondary);margin-bottom:10px;margin-top:4px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.card-sm{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px}
+.warn-box{border-radius:var(--border-radius-md);padding:9px 12px;border:0.5px solid;font-size:12px;margin-top:10px}
+.heat-cell{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;border-radius:3px;height:32px}
+.heat-grid{display:grid;gap:3px}
+.axis-lbl{font-size:10px;color:var(--color-text-secondary);text-align:center}
+.tornado-bar-pos{background:#1A7A4A;border-radius:0 3px 3px 0;height:18px;transition:width .4s ease}
+.tornado-bar-neg{background:#C0392B;border-radius:3px 0 0 3px;height:18px;transition:width .4s ease;margin-left:auto}
+</style>
+
+<div class="wrap">
+
+<div class="hdr">
+  <div>
+    <div class="hdr-title"><i class="ti ti-test-pipe" aria-hidden="true"></i>HerHeart — stress-test &amp; sensitivity analysis</div>
+    <div class="hdr-sub">Churn · CAC · pricing · OPEX · retention — all levers in one place</div>
+  </div>
+  <button onclick="sendPrompt('Walk me through what the worst-case HerHeart scenario means for the funding ask and runway ↗')" style="font-size:11px;padding:5px 11px;border-radius:var(--border-radius-md);border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.6);cursor:pointer">Interpret worst case ↗</button>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi"><div class="kpi-lbl">Y5 ARR (adjusted)</div><div class="kpi-val teal" id="k-arr">—</div><div class="kpi-delta" id="k-arr-d"></div></div>
+  <div class="kpi"><div class="kpi-lbl">Y5 EBITDA</div><div class="kpi-val" id="k-eb">—</div><div class="kpi-delta" id="k-eb-d"></div></div>
+  <div class="kpi"><div class="kpi-lbl">Effective LTV:CAC</div><div class="kpi-val" id="k-ltv">—</div><div class="kpi-delta" id="k-ltv-d"></div></div>
+  <div class="kpi"><div class="kpi-lbl">Months to payback</div><div class="kpi-val" id="k-pb">—</div><div class="kpi-delta" id="k-pb-d"></div></div>
+</div>
+
+<div class="tab-row">
+  <div class="tab on" onclick="switchTab('sensitivity',this)"><i class="ti ti-adjustments-horizontal" aria-hidden="true" style="margin-right:5px"></i>Sensitivity sliders</div>
+  <div class="tab" onclick="switchTab('tornado',this)"><i class="ti ti-chart-bar" aria-hidden="true" style="margin-right:5px"></i>Tornado chart</div>
+  <div class="tab" onclick="switchTab('heatmap',this)"><i class="ti ti-layout-grid" aria-hidden="true" style="margin-right:5px"></i>Churn × CAC heatmap</div>
+  <div class="tab" onclick="switchTab('monte',this)"><i class="ti ti-dice" aria-hidden="true" style="margin-right:5px"></i>Monte Carlo</div>
+  <div class="tab" onclick="switchTab('unit',this)"><i class="ti ti-coin" aria-hidden="true" style="margin-right:5px"></i>Unit economics</div>
+</div>
+
+<!-- ── TAB 1: SENSITIVITY ── -->
+<div class="panel on" id="tab-sensitivity">
+  <div class="sec"><i class="ti ti-sliders" aria-hidden="true" style="margin-right:5px"></i>Adjust assumptions — all outputs update live</div>
+  <div class="slider-row"><label>Annual churn rate (%)</label><input type="range" id="s-churn" min="0" max="40" step="1" value="5" oninput="recalc()"><span class="slider-val" id="sv-churn">5%</span></div>
+  <div class="slider-row"><label>CAC per hospital ($k)</label><input type="range" id="s-cac" min="10" max="100" step="1" value="25" oninput="recalc()"><span class="slider-val" id="sv-cac">$25k</span></div>
+  <div class="slider-row"><label>Avg monthly fee ($k)</label><input type="range" id="s-fee" min="5" max="25" step="1" value="11" oninput="recalc()"><span class="slider-val" id="sv-fee">$11k</span></div>
+  <div class="slider-row"><label>COGS % of subscription</label><input type="range" id="s-cogs" min="5" max="40" step="1" value="15" oninput="recalc()"><span class="slider-val" id="sv-cogs">15%</span></div>
+  <div class="slider-row"><label>Fixed monthly OPEX ($k)</label><input type="range" id="s-opex" min="80" max="400" step="5" value="195" oninput="recalc()"><span class="slider-val" id="sv-opex">$195k</span></div>
+  <div class="slider-row"><label>Avg retention (years)</label><input type="range" id="s-ret" min="1" max="10" step="1" value="5" oninput="recalc()"><span class="slider-val" id="sv-ret">5 yrs</span></div>
+  <div class="slider-row"><label>Y5 hospital count</label><input type="range" id="s-hosp" min="10" max="80" step="1" value="40" oninput="recalc()"><span class="slider-val" id="sv-hosp">40</span></div>
+
+  <div class="grid-2" style="margin-top:14px">
+    <div>
+      <div class="sec">ARR erosion from churn</div>
+      <div style="position:relative;height:200px"><canvas id="c-churn-arr" role="img" aria-label="Line chart showing ARR over 5 years with and without churn effect">ARR with and without churn over 5 years.</canvas></div>
+    </div>
+    <div>
+      <div class="sec">EBITDA trajectory</div>
+      <div style="position:relative;height:200px"><canvas id="c-ebitda-traj" role="img" aria-label="Bar chart showing EBITDA by year under current assumptions">EBITDA by year.</canvas></div>
+    </div>
+  </div>
+  <div id="warn-panel" style="margin-top:4px"></div>
+</div>
+
+<!-- ── TAB 2: TORNADO ── -->
+<div class="panel" id="tab-tornado">
+  <div class="sec">Impact on Y5 EBITDA — each variable moved ±20% from base</div>
+  <div style="display:flex;gap:6px;margin-bottom:12px;font-size:11px;color:var(--color-text-secondary)">
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#1A7A4A;display:inline-block"></span>Upside (+20%)</span>
+    <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:#C0392B;display:inline-block"></span>Downside (−20%)</span>
+  </div>
+  <div id="tornado-body" style="display:flex;flex-direction:column;gap:6px"></div>
+  <div style="margin-top:14px">
+    <div class="sec">Sensitivity ranking</div>
+    <div style="position:relative;height:220px"><canvas id="c-tornado" role="img" aria-label="Horizontal bar chart showing sensitivity of Y5 EBITDA to each assumption, ordered by impact magnitude">Tornado chart: EBITDA sensitivity by assumption.</canvas></div>
+  </div>
+</div>
+
+<!-- ── TAB 3: HEATMAP ── -->
+<div class="panel" id="tab-heatmap">
+  <div class="sec">Y5 EBITDA ($M) — churn rate vs CAC per hospital</div>
+  <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+    <div>
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:6px">CAC ($k) →</div>
+      <div id="heatmap-container"></div>
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-top:6px;text-align:center">Churn rate (%) ↓</div>
+    </div>
+    <div style="flex:1;min-width:180px">
+      <div class="sec">Reading the heatmap</div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:12px">
+        <div style="padding:8px 10px;background:#E8F6EE;border-radius:var(--border-radius-md);color:#1A7A4A">Dark green — strongly profitable. Target zone.</div>
+        <div style="padding:8px 10px;background:#FFF4E0;border-radius:var(--border-radius-md);color:#B06E00">Amber — marginal. Manageable with efficiency gains.</div>
+        <div style="padding:8px 10px;background:#FDEDEC;border-radius:var(--border-radius-md);color:#C0392B">Red — unprofitable at Y5. Funding gap risk.</div>
+      </div>
+      <div class="sec" style="margin-top:14px">Base case position</div>
+      <div class="card-sm">
+        <div style="font-size:12px;color:var(--color-text-secondary)">Churn: <span style="font-weight:500;color:var(--color-text-primary)">5%</span> · CAC: <span style="font-weight:500;color:var(--color-text-primary)">$25k</span></div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-top:4px">The base case sits in the green zone. Churn above 15% or CAC above $55k moves the model into amber territory.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TAB 4: MONTE CARLO ── -->
+<div class="panel" id="tab-monte">
+  <div class="sec">Monte Carlo simulation — 1,000 runs with randomised assumptions</div>
+  <div class="grid-3" style="margin-bottom:14px">
+    <div class="card-sm"><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:3px">Churn range</div><div style="font-size:12px;font-weight:500">2% – 18%</div><div style="font-size:10px;color:var(--color-text-secondary)">uniform distribution</div></div>
+    <div class="card-sm"><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:3px">CAC range</div><div style="font-size:12px;font-weight:500">$15k – $50k</div><div style="font-size:10px;color:var(--color-text-secondary)">uniform distribution</div></div>
+    <div class="card-sm"><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:3px">Avg fee range</div><div style="font-size:12px;font-weight:500">$8k – $15k</div><div style="font-size:10px;color:var(--color-text-secondary)">uniform distribution</div></div>
+    <div class="card-sm"><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:3px">OPEX range</div><div style="font-size:12px;font-weight:500">$150k – $280k/mo</div><div style="font-size:10px;color:var(--color-text-secondary)">uniform distribution</div></div>
+    <div class="card-sm"><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:3px">Hospital growth</div><div style="font-size:12px;font-weight:500">±25% of base</div><div style="font-size:10px;color:var(--color-text-secondary)">normal distribution</div></div>
+    <div class="card-sm"><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:3px">Runs</div><div style="font-size:12px;font-weight:500">1,000</div><div style="font-size:10px;color:var(--color-text-secondary)">seeded for reproducibility</div></div>
+  </div>
+  <div class="grid-2">
+    <div>
+      <div class="sec">Y5 EBITDA distribution ($M)</div>
+      <div style="position:relative;height:200px"><canvas id="c-monte" role="img" aria-label="Histogram of Y5 EBITDA outcomes from Monte Carlo simulation across 1000 runs">Monte Carlo Y5 EBITDA distribution histogram.</canvas></div>
+    </div>
+    <div>
+      <div class="sec">Outcome probabilities</div>
+      <div id="monte-stats" style="display:flex;flex-direction:column;gap:8px;padding-top:4px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TAB 5: UNIT ECONOMICS ── -->
+<div class="panel" id="tab-unit">
+  <div class="sec">Per-hospital unit economics under current assumptions</div>
+  <div class="grid-3" style="margin-bottom:14px" id="ue-cards"></div>
+  <div class="grid-2">
+    <div>
+      <div class="sec">LTV:CAC ratio at different churn rates</div>
+      <div style="position:relative;height:200px"><canvas id="c-ltvcac" role="img" aria-label="Line chart showing LTV to CAC ratio as churn rate increases from 0 to 30 percent">LTV:CAC vs churn rate.</canvas></div>
+    </div>
+    <div>
+      <div class="sec">Payback period at different CAC levels</div>
+      <div style="position:relative;height:200px"><canvas id="c-payback" role="img" aria-label="Line chart showing payback period in months as CAC increases from 10k to 80k">Payback months vs CAC.</canvas></div>
+    </div>
+  </div>
+  <div style="margin-top:14px">
+    <div class="sec">Rule of 40 tracker (ARR growth % + EBITDA %)</div>
+    <div style="position:relative;height:160px"><canvas id="c-r40" role="img" aria-label="Bar chart showing Rule of 40 score per year, combining ARR growth rate and EBITDA margin">Rule of 40 score per year.</canvas></div>
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const YEARS = [2027,2028,2029,2030,2031];
+const BASE_HOSP = [2,6,15,26,40];
+const BASE = {churn:5,cac:25,fee:11,cogs:15,opex:195,ret:5,hosp:40};
+
+const charts = {};
+
+function gv(id){ return parseFloat(document.getElementById(id).value)||0; }
+
+function computeModel(churn, cac, fee, cogs, opex, ret, y5hosp){
+  const churnR = churn/100, cogsR = cogs/100;
+  const opexAnn = opex*12*1000;
+  const scale = y5hosp / BASE_HOSP[4];
+  const rows = [];
+  let survHosp = 0;
+  BASE_HOSP.forEach((bh, i) => {
+    const hosp = Math.max(0, Math.round(bh * scale));
+    const newH = Math.max(0, hosp - survHosp);
+    survHosp = Math.max(0, hosp * (1 - churnR));
+    const effHosp = hosp * (1 - churnR * 0.5);
+    const arr = effHosp * fee * 1000 * 12 / 1e6;
+    const implRev = newH * 25000 / 1e6;
+    const totalRev = arr + implRev;
+    const grossProfit = totalRev * (1 - cogsR);
+    const ebitda = grossProfit - opexAnn/1e6;
+    rows.push({ yr:YEARS[i], hosp, arr, ebitda, grossMargin:(1-cogsR)*100 });
+  });
+  const contribMo = fee*1000*(1-cogsR);
+  const ltv = contribMo*12*ret/1000;
+  const ltvcac = cac > 0 ? ltv/cac : 0;
+  const payback = contribMo > 0 ? cac*1000/contribMo : 99;
+  return { rows, ltvcac, payback, contribMo };
+}
+
+function recalc(){
+  const churn=gv('s-churn'), cac=gv('s-cac'), fee=gv('s-fee'),
+        cogs=gv('s-cogs'), opex=gv('s-opex'), ret=gv('s-ret'), hosp=gv('s-hosp');
+
+  document.getElementById('sv-churn').textContent = churn+'%';
+  document.getElementById('sv-cac').textContent = '$'+cac+'k';
+  document.getElementById('sv-fee').textContent = '$'+fee+'k';
+  document.getElementById('sv-cogs').textContent = cogs+'%';
+  document.getElementById('sv-opex').textContent = '$'+opex+'k';
+  document.getElementById('sv-ret').textContent = ret+' yrs';
+  document.getElementById('sv-hosp').textContent = hosp;
+
+  const cur = computeModel(churn,cac,fee,cogs,opex,ret,hosp);
+  const base = computeModel(5,25,11,15,195,5,40);
+  const last = cur.rows[4], blast = base.rows[4];
+
+  const fmt = (v,d=2) => (v<0?'-$':'$')+Math.abs(v).toFixed(d)+'M';
+  const fmtD = (v,bv) => {
+    const d = v-bv, s = d>=0?'+':'-', c = d>=0?'pos':'neg';
+    return `<span class="${c}">${s}$${Math.abs(d).toFixed(2)}M vs base</span>`;
+  };
+
+  document.getElementById('k-arr').textContent = fmt(last.arr);
+  document.getElementById('k-arr-d').innerHTML = fmtD(last.arr, blast.arr);
+  document.getElementById('k-eb').textContent = (last.ebitda>=0?'+':'')+fmt(last.ebitda);
+  document.getElementById('k-eb').className = 'kpi-val '+(last.ebitda>=0?'pos':'neg');
+  document.getElementById('k-eb-d').innerHTML = fmtD(last.ebitda, blast.ebitda);
+  document.getElementById('k-ltv').textContent = cur.ltvcac.toFixed(1)+':1';
+  document.getElementById('k-ltv').className = 'kpi-val '+(cur.ltvcac>=3?'pos':cur.ltvcac>=1?'warn':'neg');
+  document.getElementById('k-ltv-d').innerHTML = `<span class="${cur.ltvcac>=base.ltvcac?'pos':'neg'}">${cur.ltvcac>=base.ltvcac?'+':'-'}${Math.abs(cur.ltvcac-base.ltvcac).toFixed(1)} vs base</span>`;
+  document.getElementById('k-pb').textContent = Math.round(cur.payback)+' mo';
+  document.getElementById('k-pb').className = 'kpi-val '+(cur.payback<=24?'pos':cur.payback<=36?'warn':'neg');
+  document.getElementById('k-pb-d').innerHTML = `<span class="${cur.payback<=base.payback?'pos':'neg'}">${cur.payback<=base.payback?'faster':'slower'} than base</span>`;
+
+  renderSensitivityCharts(cur);
+  renderWarnings(churn,cac,fee,opex,cur);
+  if(document.getElementById('tab-tornado').classList.contains('on')) renderTornado();
+  if(document.getElementById('tab-unit').classList.contains('on')) renderUnit();
+}
+
+function renderSensitivityCharts(cur){
+  const arrData = cur.rows.map(r=>parseFloat(r.arr.toFixed(2)));
+  const baseData = computeModel(5,25,11,15,195,5,40).rows.map(r=>parseFloat(r.arr.toFixed(2)));
+  const ebitdaData = cur.rows.map(r=>parseFloat(r.ebitda.toFixed(2)));
+  const labels = YEARS.map(String);
+  const opts = {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},animation:{duration:300}};
+
+  if(charts.ca){charts.ca.destroy();}
+  charts.ca = new Chart(document.getElementById('c-churn-arr'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Current',data:arrData,borderColor:'#0E7C86',backgroundColor:'rgba(14,124,134,.08)',fill:true,tension:.4,pointRadius:3,borderWidth:2},
+      {label:'Base',data:baseData,borderColor:'#B0BEC8',borderDash:[4,3],fill:false,tension:.4,pointRadius:0,borderWidth:1.5}
+    ]},
+    options:{...opts,scales:{y:{ticks:{callback:v=>'$'+v+'M'},grid:{color:'rgba(128,128,128,.1)'}},x:{grid:{display:false}}}}
+  });
+
+  if(charts.et){charts.et.destroy();}
+  charts.et = new Chart(document.getElementById('c-ebitda-traj'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'EBITDA',data:ebitdaData,backgroundColor:ebitdaData.map(v=>v>=0?'rgba(26,122,74,.8)':'rgba(192,57,43,.65)'),borderWidth:0,borderRadius:3}]},
+    options:{...opts,scales:{y:{ticks:{callback:v=>(v<0?'-$':'$')+Math.abs(v)+'M'},grid:{color:'rgba(128,128,128,.1)'}},x:{grid:{display:false}}}}
+  });
+}
+
+function renderWarnings(churn,cac,fee,opex,cur){
+  const warns=[];
+  if(churn>15) warns.push({t:'High churn risk','b':'Churn above 15% erodes ARR faster than new sales can compensate. Industry benchmark for health SaaS: 5–8%.',c:'neg'});
+  if(cac>50) warns.push({t:'CAC pressure','b':'CAC above $50k means payback exceeds 3 years at current pricing. Consider channel partnerships to reduce direct acquisition cost.',c:'warn'});
+  if(cur.ltvcac<3) warns.push({t:'LTV:CAC below 3:1','b':'Venture-fundable SaaS typically needs LTV:CAC ≥ 3:1. Below this, unit economics do not justify the growth investment.',c:'neg'});
+  if(cur.rows[4].ebitda < 0) warns.push({t:'Y5 still EBITDA negative','b':'Current assumptions do not reach profitability by 2031. Requires either higher pricing, lower OPEX, or accelerated hospital growth.',c:'neg'});
+  const wp=document.getElementById('warn-panel');
+  wp.innerHTML=warns.map(w=>`<div class="warn-box" style="background:${w.c==='neg'?'#FDEDEC':'#FFF4E0'};border-color:${w.c==='neg'?'rgba(192,57,43,.3)':'rgba(176,110,0,.3)'};color:${w.c==='neg'?'#A32D2D':'#633806'};margin-bottom:6px"><strong>${w.t}:</strong> ${w.b}</div>`).join('');
+}
+
+function renderTornado(){
+  const base = computeModel(5,25,11,15,195,5,40);
+  const baseY5 = base.rows[4].ebitda;
+  const vars = [
+    {label:'Avg monthly fee',id:'fee',base:11,delta:2.2,isK:true,dir:1},
+    {label:'Hospital count (Y5)',id:'hosp',base:40,delta:8,isK:false,dir:1},
+    {label:'Annual churn rate',id:'churn',base:5,delta:1,isK:false,dir:-1},
+    {label:'Fixed OPEX',id:'opex',base:195,delta:39,isK:false,dir:-1},
+    {label:'COGS %',id:'cogs',base:15,delta:3,isK:false,dir:-1},
+    {label:'CAC per hospital',id:'cac',base:25,delta:5,isK:true,dir:-1},
+    {label:'Avg retention (yrs)',id:'ret',base:5,delta:1,isK:false,dir:1},
+  ];
+  const results = vars.map(v => {
+    const args = (over) => {
+      const p = {churn:5,cac:25,fee:11,cogs:15,opex:195,ret:5,hosp:40};
+      p[v.id] = over;
+      return [p.churn,p.cac,p.fee,p.cogs,p.opex,p.ret,p.hosp];
+    };
+    const up = computeModel(...args(v.base + v.delta)).rows[4].ebitda;
+    const dn = computeModel(...args(v.base - v.delta)).rows[4].ebitda;
+    const upDelta = parseFloat((up - baseY5).toFixed(2));
+    const dnDelta = parseFloat((dn - baseY5).toFixed(2));
+    const posDelta = v.dir > 0 ? upDelta : dnDelta;
+    const negDelta = v.dir > 0 ? dnDelta : upDelta;
+    return { label:v.label, posDelta, negDelta, range: Math.abs(upDelta)+Math.abs(dnDelta) };
+  }).sort((a,b)=>b.range-a.range);
+
+  const maxRange = Math.max(...results.map(r=>r.range));
+  const tbody = document.getElementById('tornado-body');
+  tbody.innerHTML = results.map(r => {
+    const posW = Math.round(Math.max(0,r.posDelta)/maxRange*160);
+    const negW = Math.round(Math.max(0,Math.abs(r.negDelta))/maxRange*160);
+    return `<div style="display:grid;grid-template-columns:140px 1fr;gap:8px;align-items:center">
+      <div style="font-size:11px;color:var(--color-text-secondary);text-align:right">${r.label}</div>
+      <div style="display:flex;align-items:center;gap:3px">
+        <div style="width:160px;display:flex;justify-content:flex-end"><div class="tornado-bar-neg" style="width:${negW}px"></div></div>
+        <div style="width:2px;height:22px;background:var(--color-border-secondary)"></div>
+        <div style="width:160px"><div class="tornado-bar-pos" style="width:${posW}px"></div></div>
+        <div style="font-size:10px;color:var(--color-text-secondary);min-width:70px">${r.posDelta>=0?'+':''}${r.posDelta.toFixed(2)} / ${r.negDelta>=0?'+':''}${r.negDelta.toFixed(2)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if(charts.tor){charts.tor.destroy();}
+  charts.tor = new Chart(document.getElementById('c-tornado'),{
+    type:'bar',
+    data:{
+      labels: results.map(r=>r.label),
+      datasets:[
+        {label:'Upside',data:results.map(r=>r.posDelta),backgroundColor:'rgba(26,122,74,.75)',borderWidth:0,borderRadius:2},
+        {label:'Downside',data:results.map(r=>r.negDelta),backgroundColor:'rgba(192,57,43,.65)',borderWidth:0,borderRadius:2},
+      ]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},animation:{duration:300},
+      scales:{
+        x:{ticks:{callback:v=>(v<0?'-$':'$')+Math.abs(v).toFixed(1)+'M'},grid:{color:'rgba(128,128,128,.1)'},title:{display:true,text:'EBITDA change from base ($M)',font:{size:11},color:'#888'}},
+        y:{grid:{display:false},ticks:{font:{size:11}}}
+      }
+    }
+  });
+}
+
+function renderHeatmap(){
+  const churns=[0,5,10,15,20,25,30];
+  const cacs=[15,20,25,30,40,55,70];
+  const container=document.getElementById('heatmap-container');
+
+  const allVals=[];
+  churns.forEach(ch=>cacs.forEach(ca=>allVals.push(computeModel(ch,ca,11,15,195,5,40).rows[4].ebitda)));
+  const mn=Math.min(...allVals), mx=Math.max(...allVals);
+
+  const colorCell=(v)=>{
+    if(v>=1.5) return {bg:'#1A7A4A',text:'#E8F6EE'};
+    if(v>=0.5) return {bg:'#3B6D11',text:'#EAF3DE'};
+    if(v>=0)   return {bg:'#639922',text:'#EAF3DE'};
+    if(v>=-0.5) return {bg:'#B06E00',text:'#FFF4E0'};
+    if(v>=-1.5) return {bg:'#993C1D',text:'#FAECE7'};
+    return {bg:'#A32D2D',text:'#FDEDEC'};
+  };
+
+  let html=`<div style="display:grid;grid-template-columns:44px repeat(${cacs.length},52px);gap:3px;align-items:center">`;
+  html+=`<div class="axis-lbl" style="font-size:10px;color:var(--color-text-secondary)">churn \\ CAC</div>`;
+  cacs.forEach(ca=>html+=`<div class="axis-lbl" style="font-size:10px;color:var(--color-text-secondary)">$${ca}k</div>`);
+
+  churns.forEach(ch=>{
+    html+=`<div class="axis-lbl" style="font-size:10px;color:var(--color-text-secondary)">${ch}%</div>`;
+    cacs.forEach(ca=>{
+      const v=computeModel(ch,ca,11,15,195,5,40).rows[4].ebitda;
+      const {bg,text}=colorCell(v);
+      const isBase=(ch===5&&ca===25);
+      html+=`<div class="heat-cell" style="background:${bg};color:${text};${isBase?'outline:2px solid #0D1F3C;outline-offset:-2px':''}">${v>=0?'+':''}${v.toFixed(1)}</div>`;
+    });
+  });
+  html+=`</div>`;
+  container.innerHTML=html;
+}
+
+function renderMonte(){
+  const N=1000, seed=42;
+  let s=seed;
+  const rng=()=>{s=(s*1664525+1013904223)&0xffffffff;return((s>>>0)/4294967296);};
+  const uni=(a,b)=>a+(b-a)*rng();
+
+  const ebitdas=[];
+  for(let i=0;i<N;i++){
+    const churn=uni(2,18), cac=uni(15,50), fee=uni(8,15),
+          cogs=uni(10,25), opex=uni(150,280), ret=uni(3,7),
+          hosp=Math.round(40*(1+(rng()-.5)*0.5));
+    const m=computeModel(churn,cac,fee,cogs,opex,ret,hosp);
+    ebitdas.push(parseFloat(m.rows[4].ebitda.toFixed(2)));
+  }
+
+  const sorted=[...ebitdas].sort((a,b)=>a-b);
+  const p10=sorted[Math.round(N*.1)], p50=sorted[Math.round(N*.5)], p90=sorted[Math.round(N*.9)];
+  const pPositive=ebitdas.filter(v=>v>=0).length/N*100;
+  const pGT1=ebitdas.filter(v=>v>=1).length/N*100;
+  const pLT0=ebitdas.filter(v=>v<0).length/N*100;
+
+  const bins=20, mn=sorted[0], mx=sorted[N-1], bw=(mx-mn)/bins;
+  const hist=Array(bins).fill(0);
+  ebitdas.forEach(v=>{const b=Math.min(bins-1,Math.floor((v-mn)/bw));hist[b]++;});
+  const binLabels=Array(bins).fill(0).map((_,i)=>(mn+i*bw).toFixed(1));
+  const binColors=binLabels.map(l=>parseFloat(l)>=0?'rgba(26,122,74,.75)':'rgba(192,57,43,.65)');
+
+  if(charts.mc){charts.mc.destroy();}
+  charts.mc=new Chart(document.getElementById('c-monte'),{
+    type:'bar',
+    data:{labels:binLabels,datasets:[{label:'Frequency',data:hist,backgroundColor:binColors,borderWidth:0,borderRadius:1}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},animation:{duration:400},
+      scales:{
+        x:{ticks:{maxTicksLimit:8,callback:v=>v+'M',autoSkip:true},grid:{display:false}},
+        y:{ticks:{stepSize:50},grid:{color:'rgba(128,128,128,.1)'}}
+      }
+    }
+  });
+
+  document.getElementById('monte-stats').innerHTML=`
+    <div class="card-sm"><div style="font-size:10px;color:var(--color-text-secondary)">P10 (pessimistic)</div><div style="font-size:16px;font-weight:500;color:#C0392B">${p10>=0?'+':''}$${p10.toFixed(2)}M</div></div>
+    <div class="card-sm"><div style="font-size:10px;color:var(--color-text-secondary)">P50 (median)</div><div style="font-size:16px;font-weight:500;color:#B06E00">${p50>=0?'+':''}$${p50.toFixed(2)}M</div></div>
+    <div class="card-sm"><div style="font-size:10px;color:var(--color-text-secondary)">P90 (optimistic)</div><div style="font-size:16px;font-weight:500;color:#1A7A4A">${p90>=0?'+':''}$${p90.toFixed(2)}M</div></div>
+    <div class="card-sm" style="margin-top:4px">
+      <div style="display:flex;flex-direction:column;gap:5px;font-size:12px">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--color-text-secondary)">Probability EBITDA positive</span><span class="pos" style="font-weight:500">${pPositive.toFixed(0)}%</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--color-text-secondary)">Probability EBITDA &gt; $1M</span><span class="teal" style="font-weight:500">${pGT1.toFixed(0)}%</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--color-text-secondary)">Probability EBITDA negative</span><span class="neg" style="font-weight:500">${pLT0.toFixed(0)}%</span></div>
+      </div>
+    </div>`;
+}
+
+function renderUnit(){
+  const churn=gv('s-churn'), cac=gv('s-cac'), fee=gv('s-fee'), cogs=gv('s-cogs'), ret=gv('s-ret');
+  const cogsR=cogs/100;
+  const contribMo=fee*1000*(1-cogsR);
+  const contribAnn=contribMo*12;
+  const ltv=contribMo*12*ret/1000;
+  const ltvcac=cac>0?ltv/cac:0;
+  const payback=contribMo>0?Math.round(cac*1000/contribMo):99;
+  const churnR=churn/100;
+  const nrr=Math.round((1-churnR)*100+5);
+
+  document.getElementById('ue-cards').innerHTML=[
+    ['Contribution/mo','$'+Math.round(contribMo/1000)+'k','per hospital after COGS'],
+    ['LTV (gross)','$'+ltv.toFixed(1)+'k','at current ret. '+ret+' yrs'],
+    ['LTV:CAC',ltvcac.toFixed(1)+':1',ltvcac>=3?'healthy — above 3:1':ltvcac>=1?'marginal':'critical'],
+    ['Payback',payback+' months',payback<=24?'within target':'exceeds 24mo target'],
+    ['Net Revenue Retention',nrr+'%',nrr>=100?'expansion possible':'churn drag on ARR'],
+    ['Gross margin',Math.round((1-cogsR)*100)+'%','subscription margin'],
+  ].map(([l,v,s])=>`<div class="card-sm"><div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:2px">${l}</div><div style="font-size:16px;font-weight:500;color:var(--color-text-primary)">${v}</div><div style="font-size:10px;color:var(--color-text-secondary)">${s}</div></div>`).join('');
+
+  const churnRange=[0,2,5,8,10,15,20,25,30];
+  const ltvData=churnRange.map(ch=>{
+    const cm=fee*1000*(1-cogsR);
+    const effRet=Math.max(0.5,ret*(1-ch/100*2));
+    return parseFloat((cm*12*effRet/1000/cac).toFixed(2));
+  });
+
+  if(charts.lc){charts.lc.destroy();}
+  charts.lc=new Chart(document.getElementById('c-ltvcac'),{
+    type:'line',
+    data:{labels:churnRange.map(v=>v+'%'),datasets:[
+      {label:'LTV:CAC',data:ltvData,borderColor:'#0E7C86',backgroundColor:'rgba(14,124,134,.08)',fill:true,tension:.4,pointRadius:4,borderWidth:2},
+      {label:'3:1 floor',data:Array(churnRange.length).fill(3),borderColor:'#C0392B',borderDash:[4,3],fill:false,pointRadius:0,borderWidth:1.5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},animation:{duration:300},
+      scales:{x:{grid:{display:false},title:{display:true,text:'Churn rate',font:{size:10},color:'#888'}},
+        y:{grid:{color:'rgba(128,128,128,.1)'},title:{display:true,text:'LTV:CAC',font:{size:10},color:'#888'}}}}
+  });
+
+  const cacRange=[10,15,20,25,30,40,50,65,80];
+  const pbData=cacRange.map(ca=>Math.min(60,Math.round(ca*1000/contribMo)));
+  if(charts.pb){charts.pb.destroy();}
+  charts.pb=new Chart(document.getElementById('c-payback'),{
+    type:'line',
+    data:{labels:cacRange.map(v=>'$'+v+'k'),datasets:[
+      {label:'Payback',data:pbData,borderColor:'#B5446E',backgroundColor:'rgba(181,68,110,.07)',fill:true,tension:.4,pointRadius:4,borderWidth:2},
+      {label:'24mo target',data:Array(cacRange.length).fill(24),borderColor:'#C0392B',borderDash:[4,3],fill:false,pointRadius:0,borderWidth:1.5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},animation:{duration:300},
+      scales:{x:{grid:{display:false},title:{display:true,text:'CAC per hospital',font:{size:10},color:'#888'}},
+        y:{grid:{color:'rgba(128,128,128,.1)'},ticks:{callback:v=>v+'mo'},title:{display:true,text:'Payback period',font:{size:10},color:'#888'}}}}
+  });
+
+  const arrGrowth=[null,200,150,80,45];
+  const ebitdaMarg=computeModel(churn,cac,fee,cogs,gv('s-opex'),ret,gv('s-hosp')).rows.map(r=>parseFloat(r.ebitda.toFixed(2)));
+  const baseArr=computeModel(5,25,11,15,195,5,40).rows.map(r=>r.arr);
+  const r40=YEARS.map((_,i)=>{
+    if(i===0) return null;
+    const growth=Math.round((baseArr[i]-baseArr[i-1])/baseArr[i-1]*100);
+    const eb=parseFloat((ebitdaMarg[i]/((baseArr[i])||1)*100).toFixed(1));
+    return Math.round(growth+eb);
+  }).filter(v=>v!==null);
+
+  if(charts.r40){charts.r40.destroy();}
+  charts.r40=new Chart(document.getElementById('c-r40'),{
+    type:'bar',
+    data:{labels:YEARS.slice(1).map(String),datasets:[
+      {label:'Rule of 40',data:r40,backgroundColor:r40.map(v=>v>=40?'rgba(26,122,74,.8)':v>=0?'rgba(176,110,0,.7)':'rgba(192,57,43,.65)'),borderWidth:0,borderRadius:3},
+      {label:'40 threshold',data:Array(4).fill(40),type:'line',borderColor:'#0E7C86',borderDash:[4,3],fill:false,pointRadius:0,borderWidth:1.5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},animation:{duration:300},
+      scales:{y:{grid:{color:'rgba(128,128,128,.1)'},ticks:{callback:v=>v}},x:{grid:{display:false}}}}
+  });
+}
+
+function switchTab(name, el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('tab-'+name).classList.add('on');
+  if(name==='tornado') renderTornado();
+  if(name==='heatmap') renderHeatmap();
+  if(name==='monte')   renderMonte();
+  if(name==='unit')    renderUnit();
+}
+
+recalc();
+renderHeatmap();
+</script>

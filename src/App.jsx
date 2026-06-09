@@ -730,7 +730,7 @@ const BusinessPage = () => {
       <Section>
         <div className="grid-3" style={{ marginBottom:40 }}>
           {[
-            ["Per-site subscription","€3k–15k/month per hospital site, tiered by annual ED patient volume. Annual billing."],
+            ["Per-site subscription","€10k–15k/month per hospital site, tiered by annual ED patient volume. Annual billing."],
             ["Channel partnerships","20–35% rev-share with Philips, Siemens, Epic App Orchard from year 3 onward."],
             ["Value-based pilot","Free 3-month pilot → paid contract contingent on measurable triage improvement."],
           ].map(([t,b]) => (

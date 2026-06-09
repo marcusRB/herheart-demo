@@ -947,12 +947,12 @@ const TeamPage = () => (
     <Section>
       <div className="grid-3" style={{ marginBottom:40 }}>
         {[
-          ["Rajae El Gaouzi • Founder / CEO","Health Data Science & Bioinformatics MSc. Background in software engineering and ML. Led the original HerNextBeat research concept and architecture.","CEO · Strategy · Fundraising"],
-          ["Clara Gonzalez • Chief Medical Officer (CMO)","Cardiologist, 15 years ED experience. Led women's cardiac health research at Hospital Clínic Barcelona. Clinical validation lead.","CMO · Clinical validation · KOL"],
-          ["Marco Russo • Chief Financial Officer (CFO)","Former VP Digital Health at Philips Healthtech. Deep hospital C-suite network in Spain, Germany, and the UK.","CFO · Finance · Strategy"],
-          ["Iván Peréz López • Chief Technology Officer (CTO)","PhD Applied ML. Former researcher on the MIMIC-IV dataset team. Leads model architecture, SHAP pipeline, and drift monitoring system.","CTO · Model · Infrastructure"],
-          ["Victor Gutierrez Gonzalez • Regulatory Affairs and Quality Assurance (QA) Manager","Specialist in EU MDR and FDA SaMD. Led CE mark submission for two Class IIa devices. Owns the 510(k) filing.","Regulatory · Compliance · Legal"],
-          ["Marta Meroño Rafel • Operation and Marketing Officer (OMO)","Former VP Digital Health at Philips Healthtech. Deep hospital C-suite network in Spain, Germany, and the UK.","OMO · Business development"],
+          ["Rajae El Gaouzi • Founder / CEO","Leads the strategic vision, partnerships, and overall growth of HerNextBeat, driving innovation in women’s cardiovascular healthcare.","CEO · Strategy · Fundraising"],
+          ["Clara Gonzalez • Chief Medical Officer (CMO)","Oversees clinical strategy, medical validation, and collaboration with healthcare professionals to ensure patient-centered and evidence-based solutions.","CMO · Clinical validation · KOL"],
+          ["Marco Russo • Chief Financial Officer (CFO)","Manages financial strategy, investment planning, budgeting, and long-term business sustainability.","CFO · Finance · Strategy"],
+          ["Iván Peréz López • Chief Technology Officer (CTO)","Leads the development of HerNextBeat’s AI infrastructure, software architecture, and integration with healthcare systems.","CTO · Model · Infrastructure"],
+          ["Victor Gutierrez Gonzalez • Regulatory Affairs and Quality Assurance (QA) Manager","Ensures compliance with FDA, HIPAA, and healthcare quality standards while overseeing regulatory strategy and product safety.","Regulatory · Compliance · Legal"],
+          ["Marta Meroño Rafel • Operation and Marketing Officer (OMO)","Coordinates business operations, marketing strategy, brand development, and communication to support market adoption and company growth.","OMO · Business development"],
         ].map(([role,bio,tags]) => (
           <div key={role} className="card">
             <div style={{ width:42, height:42, borderRadius:"50%",

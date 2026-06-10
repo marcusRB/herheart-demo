@@ -1,0 +1,9 @@
+export { default as BusinessPage } from "./BusinessPage";
+export { default as ContactPage } from "./ContactPage";
+export { default as DemoPage } from "./DemoPage";
+export { default as EvidencePage } from "./EvidencePage";
+export { default as FundingPage } from "./FundingPage";
+export { default as HomePage } from "./HomePage";
+export { default as SolutionPage } from "./SolutionPage";
+export { default as StressTestPage } from "./StressTestPage";
+export { default as TeamPage } from "./TeamPage";

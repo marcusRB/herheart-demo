@@ -1117,7 +1117,7 @@ const ContactPage = () => {
               <div>
                 <div style={{ fontSize:11, fontWeight:600, color:T.textMuted,
                   textTransform:"uppercase", letterSpacing:".06em", marginBottom:6 }}>Work email</div>
-                <input type="email" placeholder="demo@hospital.org"
+                <input type="email" placeholder="demo@hernextbeat.tech"
                   style={{ width:"100%", background:T.bg, border:`1px solid ${T.border2}`,
                     borderRadius:7, padding:"9px 12px", color:T.text, fontSize:13, outline:"none" }} />
               </div>
@@ -1153,7 +1153,7 @@ const ContactPage = () => {
           </div>
         )}
         <div className="grid-3" style={{ marginTop:32 }}>
-          {[["Email","hello@hernextbeat.ai"],["Based in","London, England · UK"],["Response time","Within 48 h"]].map(([k,v]) => (
+          {[["Email","hello@hernextbeat.tech"],["Based in","London, England · UK"],["Response time","Within 48 h"]].map(([k,v]) => (
             <div key={k} style={{ textAlign:"center", padding:16,
               borderRight: k !== "Response time" ? `1px solid ${T.border}` : "none" }}>
               <div style={{ fontSize:10, fontWeight:600, color:T.textMuted,
@@ -1188,14 +1188,14 @@ const Footer = ({ setPage }) => (
         <div style={{ display:"flex", gap:52, flexWrap:"wrap" }}>
           {[["Platform",["Solution","Demo","Evidence"]],
             ["Company",["Business","Stress Test","Team","Funding"]],
-            ["Contact",["Contact","hello@hernextbeat.ai","Press kit"]],
+            ["Contact",["Contact","hello@hernextbeat.tech","Press kit"]],
           ].map(([group, links]) => (
             <div key={group}>
               <div style={{ fontSize:10, color:"rgba(255,255,255,.35)", textTransform:"uppercase",
                 letterSpacing:".1em", marginBottom:14, fontWeight:600 }}>{group}</div>
               {links.map(l => (
                 <div key={l} style={{ marginBottom:10 }}>
-                  <span onClick={() => setPage(l === "hello@hernextbeat.ai" || l === "Press kit" ? "Contact" : l)}
+                  <span onClick={() => setPage(l === "hello@hernextbeat.tech" || l === "Press kit" ? "Contact" : l)}
                     style={{ fontSize:13, color:"rgba(255,255,255,.45)", cursor:"pointer",
                       transition:"color .15s" }}
                     onMouseEnter={e => e.target.style.color="#fff"}

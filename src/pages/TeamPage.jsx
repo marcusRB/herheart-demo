@@ -1,5 +1,6 @@
 import claraImg from "../assets/clara.png";
 import ivanImg from "../assets/ivan.png";
+import logoTextImg from "../assets/logo_bg.jpg";
 import marcoImg from "../assets/marco.png";
 import martaImg from "../assets/marta.png";
 import rajaeImg from "../assets/rajae.png";
@@ -11,11 +12,20 @@ export default function TeamPage() {
   return (
     <div style={{ paddingTop: 58 }}>
       <div style={{ background: T.navBg, padding: "52px clamp(20px,5vw,72px)" }}>
-        <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-          <LabelTag>The team - NextBeat</LabelTag>
-          <h1 className="section-title" style={{ color: "#fff", marginBottom: 16 }}>
-            Clinical depth meets<br /><em>engineering precision</em>
-          </h1>
+        <div style={{ maxWidth: 1120, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 32, flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 380px", minWidth: 0 }}>
+            <LabelTag>The team - NextBeat</LabelTag>
+            <h1 className="section-title" style={{ color: "#fff", marginBottom: 16 }}>
+              Clinical depth meets<br /><em>engineering precision</em>
+            </h1>
+          </div>
+          <div style={{ flex: "0 1 420px", width: "100%", maxWidth: 420, marginLeft: "auto" }}>
+            <img
+              src={logoTextImg}
+              alt="HerNextBeat logotype"
+              style={{ width: "100%", height: "auto", display: "block" }}
+            />
+          </div>
         </div>
       </div>
       <Section>
@@ -33,7 +43,7 @@ export default function TeamPage() {
           <h2 className="section-title" style={{ fontSize: 24, marginBottom: 10 }}>We are hiring</h2>
           <p style={{ color: T.textMid, fontSize: 14, maxWidth: 400, margin: "0 auto 24px", lineHeight: 1.8 }}>
             Open roles: Senior ML Engineer (FHIR/healthcare AI), Clinical Data Scientist,
-            Hospital Partnerships Manager (US/Canada and DACH region).
+            Hospital Partnerships Manager (US/Canada and EMEA region).
           </p>
           <button className="btn-secondary">View open roles →</button>
         </div>

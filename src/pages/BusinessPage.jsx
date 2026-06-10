@@ -41,29 +41,11 @@ export default function BusinessPage() {
           </div>
           <EmbeddedHtmlFrame title="HerHeart financial simulator" srcDoc={HERHEART_FINANCIAL_SIMULATOR_SRCDOC} minHeight={1500} />
         </div>
-        <div className="card" style={{ marginBottom: 40 }}>
-          <div style={{ paddingBottom: 16, marginBottom: 20, borderBottom: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: T.navy }}>5-year P&amp;L projection ($k)</span>
-            <div style={{ display: "flex", gap: 16, fontSize: 11, color: T.textMuted }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 12, height: 3, background: T.teal, display: "inline-block", borderRadius: 2 }} />Revenue</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 12, height: 3, background: T.rose, display: "inline-block", borderRadius: 2 }} />Costs</span>
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 16, alignItems: "flex-end", height: 180 }}>
-            {years.map((year, index) => (
-              <div key={year} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, height: "100%" }}>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 3, width: "100%" }}>
-                  <div style={{ background: T.rose, borderRadius: "4px 4px 0 0", opacity: 0.6, height: `${Math.round((costs[index] / maxVal) * 160)}px` }} />
-                  <div style={{ background: T.teal, borderRadius: "4px 4px 0 0", height: `${Math.round((revenue[index] / maxVal) * 160)}px` }} />
-                </div>
-                <div style={{ fontSize: 11, color: T.textMuted }}>{year}</div>
-                <div style={{ fontSize: 11, color: T.teal, fontWeight: 600 }}>{revenue[index] > 0 ? `$${revenue[index]}k` : "—"}</div>
-              </div>
-            ))}
-          </div>
-        </div>
         <h2 className="section-title" style={{ fontSize: 26, marginBottom: 20 }}>Growth phases</h2>
-        {[["2026", "Pre-revenue — validation", "FDA 510(k) filing · IRB retrospective study · 1st pilot hospital signed · $380k burn · seed round raise"], ["2027", "Pilot revenue — $120k ARR", "2–3 paying pilot hospitals · validation paper submitted to JAMA / EHJ · CE mark pathway started"], ["2028", "Early scale — $500k ARR", "10 hospitals · first reseller MOU signed · Series A preparation · break-even on horizon"], ["2029–30", "Scale — $1.8M–4.5M ARR", "30+ hospitals · Epic App Orchard listing · U.S. + EU markets active · EBITDA positive"]].map(([year, title, body]) => (
+        {[["2026", "Pre-revenue — validation", "FDA Q‑Sub meeting scheduled · IRB retrospective study · 1st pilot hospital signed · Seed round closed · $380k burn"],
+        ["2027", "2‑3 pilot hospitals signed ", "Retrospective validation completed · ISO 13485 initiated"],
+        ["2028", "Early scale — $500k ARR", "5‑8 hospitals active (mix of Tier 1/2) · First commercial contracts (full price) · Series A prep (€10‑15M target)"],
+        ["2029–30", "Scale — $1.8M–4.5M ARR", "FDA clearance (expected Q4 2029) · Epic App Orchard listing · U.S. + EU markets active · 20‑30 hospitals active"]].map(([year, title, body]) => (
           <div key={year} style={{ display: "grid", gridTemplateColumns: "90px 1fr", gap: 20, padding: "18px 0", borderBottom: `1px solid ${T.border}` }}>
             <div style={{ fontSize: 13, color: T.teal, fontWeight: 600, paddingTop: 2 }}>{year}</div>
             <div>
